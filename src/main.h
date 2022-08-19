@@ -4,6 +4,7 @@
 
 #define COMMANDS_LEN 10     // number of commands
 #define COLORS_LEN 8        // number of colors
+#define BANNER_LEN 15       // number of strings in banner
 #define MAX_TERMS 7         // maximum number of terms (args) supported
 #define DEFAULT_WIDTH 1024  // default screen width
 #define DEFAULT_HEIGHT 768  // default screen height
@@ -28,10 +29,11 @@
 #define CYAN 6
 #define WHITE 7
 
-// Help Information
+// General Help
 static const char* TXT_HELP = {
     "\nI will help you!\n"};
 
+// Command Help
 static const char* TXT_HELP_CMD[10] = {
     "\nHelp for help\n",
     "\nHelp for cls\n",
@@ -45,7 +47,7 @@ static const char* TXT_HELP_CMD[10] = {
     "\nHelp for draw\n",
 };
 
-// Commands and Colors constants
+// Master Data
 static const char* COMMANDS[10] = {
     "help",
     "cls",
@@ -70,11 +72,26 @@ static const char* COLORS[8] = {
     "white",
 };
 
-// Function prototypes
-void parsebuf(char* buf);
-int getcmd(char* s);
-int getcolor(char* s);
+// Welcome Banner
+static const char* BANNER[15] = {
+    "\n\n",
+    "░█▀▀░█▀▀░█▀▀░▀█▀░▀▀▄░█░█░▄▀▄░▄▀▄\n",
+    "░█▀▀░█▀▀░█▀▀░░█░░▄▀░░░▀█░░▀█░█/█\n",
+    "░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░░░▀░▀▀░░░▀░\n",
+    " _______  _______  ______    _______    _______  _______ \n",
+    "|  _    ||   _   ||    _ |  |       |  |       ||       |\n",
+    "| |_|   ||  |_|  ||   | ||  |    ___|  |   _   ||  _____|\n",
+    "|       ||       ||   |_||_ |   |___   |  | |  || |_____ \n",
+    "|  _   | |       ||    __  ||    ___|  |  |_|  ||_____  |\n",
+    "| |_|   ||   _   ||   |  | ||   |___   |       | _____| |\n",
+    "|_______||__| |__||___|  |_||_______|  |_______||_______|\n",
+    "\n",
+    "---------------------------------------------------------\n",
+    "Nguyen Minh Trang (s3752450)\n",
+    "RMIT University Vietnam\n\n",
+};
 
+// CLI function prototypes
 void help(char* token, char* delim, int terms);
 void cls(int terms);
 void brdrev(int terms);
@@ -86,3 +103,9 @@ void setcolor(char* token, char* delim, int terms);
 void scrsize(char* token, char* delim, int terms);
 void draw(char* token, char* delim, int terms);
 void setscreen(int w, int h, int pflag);
+
+// Helpers
+void parsebuf(char* buf);
+int getcmd(char* s);
+int getcolor(char* s);
+void banner();

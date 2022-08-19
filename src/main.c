@@ -10,6 +10,7 @@
 void main() {
   uart_init();     // set up serial console
   framebf_init();  // set up frame buffer
+  banner();        // print welcome banner
 
   printf("Characters:%2c%c \n", 'a', 65);
   printf("Decimals: %.7d %.d\n", 1977, 650000);
@@ -610,4 +611,11 @@ int getcolor(char* s) {
     }
   }
   return -1;  // not found
+}
+
+// Print the welcome banner
+void banner() {
+  for (int i = 0; i < BANNER_LEN; i++) {
+    uart_puts((char*)BANNER[i]);
+  }
 }
