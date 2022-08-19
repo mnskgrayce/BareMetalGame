@@ -1,14 +1,8 @@
-make --dry-run --always-make --keep-going --print-directory
+make --dry-run --keep-going --print-directory
 make: Entering directory `/Users/minesk/Library/CloudStorage/OneDrive-RMITUniversity/_EEET2490 - Embedded Systems OS/MyBareMetalOS'
-rm -f *.img ./object/kernel8.elf ./object/kernel8.img ./object/*.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/start.S -o object/start.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/framebf.c -o object/framebf.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/main.c -o object/main.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/mbox.c -o object/mbox.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/printf.c -o object/printf.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/string.c -o object/string.o
-aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c source/uart.c -o object/uart.o
-aarch64-elf-ld -nostdlib ./object/start.o ./object/framebf.o ./object/main.o ./object/mbox.o ./object/printf.o ./object/string.o ./object/uart.o -T ./script/link.ld -o ./object/kernel8.elf
-aarch64-elf-objcopy -O binary ./object/kernel8.elf ./object/kernel8.img
+rm -f *.img ./build/kernel8.elf ./build/kernel8.img ./build/*.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/boot.S -o build/boot.o
+aarch64-elf-ld -nostdlib ./build/boot.o ./build/framebf.o ./build/main.o ./build/mbox.o ./build/printf.o ./build/string.o ./build/uart.o -T ./script/link.ld -o ./build/kernel8.elf
+aarch64-elf-objcopy -O binary ./build/kernel8.elf ./build/kernel8.img
 make: Leaving directory `/Users/minesk/Library/CloudStorage/OneDrive-RMITUniversity/_EEET2490 - Embedded Systems OS/MyBareMetalOS'
  

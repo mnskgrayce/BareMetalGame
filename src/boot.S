@@ -1,5 +1,5 @@
-// ----------------------------------- start.S -------------------------------------
-.section ".text.boot" // Linked puts this at the start of kernel image
+// ----------------------------------- boot.S -------------------------------------
+.section ".text.boot" // Linker puts this at the start of kernel image
 
 .global _start // Execution starts here
 

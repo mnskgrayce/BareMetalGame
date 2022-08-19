@@ -1,6 +1,6 @@
 # Specify the build and source folder
-BUILD_DIR = ./object
-SRC_DIR = ./source
+BUILD_DIR = ./build
+SRC_DIR = ./src
 SCRIPT_DIR = ./script
 
 # Code files are all .c files inside SRC_DIR
@@ -16,17 +16,17 @@ LDFLAGS = -nostdlib
 # Run the "clean" and "kernel.img" commands
 all: clean kernel8.img
 
-# Make start.o from the start.S inside SRC_DIR
-$(BUILD_DIR)/start.o: $(SRC_DIR)/start.S
+# Make boot.o from the boot.S inside SRC_DIR
+$(BUILD_DIR)/boot.o: $(SRC_DIR)/boot.S
 	aarch64-elf-gcc $(GCCFLAGS) -c $< -o $@
 
 # Make other .o files from .c files inside SRC_DIR
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	aarch64-elf-gcc $(GCCFLAGS) -c $< -o $@
 
-# Run the start.o inside BUILD_DIR
-kernel8.img: $(BUILD_DIR)/start.o $(OFILES)
-	aarch64-elf-ld $(LDFLAGS) $(BUILD_DIR)/start.o $(OFILES) -T $(SCRIPT_DIR)/link.ld -o $(BUILD_DIR)/kernel8.elf
+# Run the boot.o inside BUILD_DIR
+kernel8.img: $(BUILD_DIR)/boot.o $(OFILES)
+	aarch64-elf-ld $(LDFLAGS) $(BUILD_DIR)/boot.o $(OFILES) -T $(SCRIPT_DIR)/link.ld -o $(BUILD_DIR)/kernel8.elf
 	aarch64-elf-objcopy -O binary $(BUILD_DIR)/kernel8.elf $(BUILD_DIR)/kernel8.img
 
 # Delete the image file and stuff inside BUILD_DIR
