@@ -1,5 +1,5 @@
-// ----------------------------------- string.c -------------------------------------
-#include "string.h"
+// ----------------------------------- oslib.c -------------------------------------
+#include "oslib.h"
 
 // Clear a char array
 void clrstr(char* s) {
@@ -8,6 +8,14 @@ void clrstr(char* s) {
     s[i] = '\0';
     i++;
   }
+}
+
+// Clone a string
+char* strcpy(char* des, const char* src) {
+  char* tmp = des;
+  while ((*des++ = *src++))  // copy value and advance pointer until null
+    ;
+  return tmp;  // pointer to clone string
 }
 
 // Trim leading and trailing whitespace in a string
@@ -21,14 +29,6 @@ char* strtrim(char* s) {
     p--;
   }
   return s;  // pointer to trimmed string
-}
-
-// Clone a string
-char* strcpy(char* des, const char* src) {
-  char* tmp = des;
-  while ((*des++ = *src++))  // copy value and advance pointer until null
-    ;
-  return tmp;  // pointer to clone string
 }
 
 // Tokenize a string from delimiters
@@ -82,6 +82,30 @@ int strcmp(char* s1, char* s2) {
   return -1;
 }
 
+// Count number of chars in a string
+unsigned int strlen(char* s) {
+  int len = 0;
+  while (*s != '\0') {
+    len++;
+    s++;
+  }
+  return len;
+}
+
+// Count terms in a string separated by delimiters
+unsigned int count_terms(char* s, char* delim) {
+  char tmp[MAX_BUF_LEN];
+  strcpy(tmp, s);  // clone string to preserve original
+  int terms = 0;
+
+  char* token = strtok(tmp, delim);
+  while (token) {  // extract until last token
+    terms++;
+    token = strtok(0, delim);
+  }
+  return terms;
+}
+
 // Check if a char exists inside a string
 int isin(char c, char* s) {
   while (*s != '\0') {
@@ -99,30 +123,6 @@ char tolower(char c) {
     c = 'a' + (c - 'A');
   }
   return c;
-}
-
-// Count number of chars in a string
-unsigned int strlen(char* s) {
-  int len = 0;
-  while (*s != '\0') {
-    len++;
-    s++;
-  }
-  return len;
-}
-
-// Count terms in a string separated by delimiters
-unsigned int count_terms(char* s, char* delim) {
-  char tmp[BUF_LEN];
-  strcpy(tmp, s);  // clone string to preserve original
-  int terms = 0;
-
-  char* token = strtok(tmp, delim);
-  while (token) {  // extract until last token
-    terms++;
-    token = strtok(0, delim);
-  }
-  return terms;
 }
 
 // Check if a char is a digit 0-9

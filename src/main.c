@@ -3,8 +3,8 @@
 
 #include "framebf.h"
 #include "mbox.h"
+#include "oslib.h"
 #include "printf.h"
-#include "string.h"
 #include "uart.h"
 
 void main() {
@@ -21,8 +21,8 @@ void main() {
   printf("Symbol and number: %% %d \n", '%', 65);
 
   while (1) {
-    uart_puts("\n> ");  // input indicator >
-    char buf[BUF_LEN];  // init buffer
+    uart_puts("\n> ");      // input indicator >
+    char buf[MAX_BUF_LEN];  // init buffer
     int i = 0;
 
     while (1) {
@@ -56,7 +56,7 @@ void main() {
 }
 
 void parsebuf(char* buf) {
-  char tmp[BUF_LEN];
+  char tmp[MAX_BUF_LEN];
   strcpy(tmp, buf);  // clone string to preserve original
 
   char* delim = " ";

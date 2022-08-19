@@ -1,86 +1,10 @@
 // ----------------------------------- printf.c -------------------------------------
 #include "printf.h"
 
-#include "string.h"
+#include "oslib.h"
 #include "uart.h"
 
 #define MAX_PRINT_SIZE 256
-
-// Swap two values
-void swap(char *x, char *y) {
-  char t = *x;
-  *x = *y;
-  *y = t;
-}
-
-// Reverse a string section s[start...end]
-char *reverse(char *s, int start, int end) {
-  while (start < end) {
-    swap(&s[start++], &s[end--]);
-  }
-  return s;
-}
-
-// Compute power of a number
-int pow(int base, int exp) {
-  int pow = base;
-  for (int i = 1; i < exp; i++) {
-    pow *= base;
-  }
-  return pow;
-}
-
-// Convert an integer to string
-char *itoa(int num, char *s, int base, int precision) {
-  if (base < 2 || base > 32) return s;  // invalid
-
-  int n = num > 0 ? num : (num * -1);    // force to positive number
-  int sign = (num < 0) && (base == 10);  // check if '-' sign needed
-
-  int i = 0;
-  while (n) {
-    int d = n % base;
-    if (d >= 10) {
-      s[i++] = 'A' + (d - 10);  // for HEX digits
-    } else {
-      s[i++] = '0' + d;  // decimal
-    }
-    n /= base;
-  }
-
-  if (i == 0 && precision != 0) s[i++] = '0';  // input number is zero
-  while (i < precision) s[i++] = '0';          // add leading zeros
-
-  if (sign) s[i++] = '-';  // add minus sign
-  if (base == 8) {         // OCTAL prefix
-    s[i++] = 'o';
-    s[i++] = '0';
-  }
-  if (base == 16) {  // HEX prefix
-    s[i++] = 'x';
-    s[i++] = '0';
-  }
-  s[i] = '\0';                  // null terminate
-  return reverse(s, 0, i - 1);  // must reverse the string
-}
-
-// Convert a floating point number to string
-char *dtoa(double num, char *s, int precision) {
-  int i = (int)num;            // extract int part
-  double f = num - (double)i;  // extract floating part
-  f = (f > 0) ? f : (f * -1);  // force floating part to positive
-
-  char *ret = s;
-  itoa(i, ret, 10, 0);  // convert int part to string
-
-  if (precision != 0) {
-    int len = strlen(ret);
-    ret[len] = '.';                              // append dot
-    f = f * pow(10, precision);                  // left shift floating part
-    itoa((int)f, ret + len + 1, 10, precision);  // append converted floating part
-  }
-  return ret;
-}
 
 void printf(char *s, ...) {
   va_list vl;
@@ -195,4 +119,80 @@ void printf(char *s, ...) {
 
   // Print formatted string to user
   uart_puts(buf);
+}
+
+// Swap two values
+void swap(char *x, char *y) {
+  char t = *x;
+  *x = *y;
+  *y = t;
+}
+
+// Reverse a string section s[start...end]
+char *reverse(char *s, int start, int end) {
+  while (start < end) {
+    swap(&s[start++], &s[end--]);
+  }
+  return s;
+}
+
+// Compute power of a number
+int pow(int base, int exp) {
+  int pow = base;
+  for (int i = 1; i < exp; i++) {
+    pow *= base;
+  }
+  return pow;
+}
+
+// Convert an integer to string
+char *itoa(int num, char *s, int base, int precision) {
+  if (base < 2 || base > 32) return s;  // invalid
+
+  int n = num > 0 ? num : (num * -1);    // force to positive number
+  int sign = (num < 0) && (base == 10);  // check if '-' sign needed
+
+  int i = 0;
+  while (n) {
+    int d = n % base;
+    if (d >= 10) {
+      s[i++] = 'A' + (d - 10);  // for HEX digits
+    } else {
+      s[i++] = '0' + d;  // decimal
+    }
+    n /= base;
+  }
+
+  if (i == 0 && precision != 0) s[i++] = '0';  // input number is zero
+  while (i < precision) s[i++] = '0';          // add leading zeros
+
+  if (sign) s[i++] = '-';  // add minus sign
+  if (base == 8) {         // OCTAL prefix
+    s[i++] = 'o';
+    s[i++] = '0';
+  }
+  if (base == 16) {  // HEX prefix
+    s[i++] = 'x';
+    s[i++] = '0';
+  }
+  s[i] = '\0';                  // null terminate
+  return reverse(s, 0, i - 1);  // must reverse the string
+}
+
+// Convert a floating point number to string
+char *dtoa(double num, char *s, int precision) {
+  int i = (int)num;            // extract int part
+  double f = num - (double)i;  // extract floating part
+  f = (f > 0) ? f : (f * -1);  // force floating part to positive
+
+  char *ret = s;
+  itoa(i, ret, 10, 0);  // convert int part to string
+
+  if (precision != 0) {
+    int len = strlen(ret);
+    ret[len] = '.';                              // append dot
+    f = f * pow(10, precision);                  // left shift floating part
+    itoa((int)f, ret + len + 1, 10, precision);  // append converted floating part
+  }
+  return ret;
 }

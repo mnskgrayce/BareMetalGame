@@ -5,6 +5,7 @@
 
 void printf(char *s, ...);
 
+// Helper functions for printf
 void swap(char *x, char *y);
 char *reverse(char *s, int start, int end);
 int pow(int base, int exp);
