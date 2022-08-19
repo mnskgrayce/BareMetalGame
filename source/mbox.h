@@ -1,4 +1,4 @@
-// -----------------------------------mbox.h -------------------------------------
+// ----------------------------------- mbox.h -------------------------------------
 #include "gpio.h"
 
 /* a properly aligned buffer */
@@ -37,10 +37,10 @@ extern volatile unsigned int mBuf[36];
 #define MBOX_CH_PROP 8   // Property tags (ARM -> VC)
 
 /* tags */
-#define MBOX_TAG_GETSERIAL 0x00010004       // Get board serial
 #define MBOX_TAG_GETMODEL 0x00010001        // Get board model
 #define MBOX_TAG_GETREVISION 0x00010002     // Get board revision
 #define MBOX_TAG_GETMACADDR 0x00010003      // Get board MAC address
+#define MBOX_TAG_GETSERIAL 0x00010004       // Get board serial
 #define MBOX_TAG_GETARMMEM 0x00010005       // Get ARM memory
 #define MBOX_TAG_GETTEMPERATURE 0x00030006  // Get temperature
 #define MBOX_TAG_GETCLKRATE 0x00030002      // Get clock rate

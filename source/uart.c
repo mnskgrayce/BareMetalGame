@@ -99,7 +99,7 @@ void uart_hex(unsigned int d) {
 }
 
 /**
- * Display a value in decimal by
+ * Display a value in decimal
  */
 void uart_dec(int num) {
   char str[33] = "";
