@@ -1,8 +1,14 @@
-make --dry-run --keep-going --print-directory
+make --dry-run --always-make --keep-going --print-directory
 make: Entering directory `/Users/minesk/Library/CloudStorage/OneDrive-RMITUniversity/_EEET2490 - Embedded Systems OS/MyBareMetalOS'
 rm -f *.img ./build/kernel8.elf ./build/kernel8.img ./build/*.o
 aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/boot.S -o build/boot.o
-aarch64-elf-ld -nostdlib ./build/boot.o ./build/framebf.o ./build/main.o ./build/mbox.o ./build/printf.o ./build/string.o ./build/uart.o -T ./script/link.ld -o ./build/kernel8.elf
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/framebf.c -o build/framebf.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/main.c -o build/main.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/mbox.c -o build/mbox.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/oslib.c -o build/oslib.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/printf.c -o build/printf.o
+aarch64-elf-gcc -Wall -O2 -ffreestanding -nostdinc -nostdlib -c src/uart.c -o build/uart.o
+aarch64-elf-ld -nostdlib ./build/boot.o ./build/framebf.o ./build/main.o ./build/mbox.o ./build/oslib.o ./build/printf.o ./build/uart.o -T ./script/link.ld -o ./build/kernel8.elf
 aarch64-elf-objcopy -O binary ./build/kernel8.elf ./build/kernel8.img
 make: Leaving directory `/Users/minesk/Library/CloudStorage/OneDrive-RMITUniversity/_EEET2490 - Embedded Systems OS/MyBareMetalOS'
  

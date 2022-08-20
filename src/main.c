@@ -12,14 +12,14 @@ void main() {
   framebf_init();  // set up frame buffer
   banner();        // print welcome banner
 
-  printf("Characters:%2c%c \n", 'a', 65);
-  printf("Decimals: %.7d %.d\n", 1977, 650000);
-  printf("Preceding with blanks:%5d%10d \n", 1998, 2022);
-  printf("Some different radices: %d %x %o \n", -100, -100, -100);
-  printf("floats:%10f %.2f\n", 12.34, 12.123456);
-  printf("%2shoho\n", "A");
-  printf("%.3s\n", "I'm-tired");
-  printf("Symbol and number: %% %d \n", '%', 65);
+  // printf("Characters:%2c%c \n", 'a', 65);
+  // printf("Decimals: %.7d %.d\n", 1977, 650000);
+  // printf("Preceding with blanks:%5d%10d \n", 1998, 2022);
+  // printf("Some different radices: %d %x %o \n", -100, -100, -100);
+  // printf("floats:%10f %.2f\n", 12.34, 12.123456);
+  // printf("%2shoho\n", "A");
+  // printf("%.3s\n", "I'm-tired");
+  // printf("Symbol and number: %% %d \n", '%', 65);
 
   while (1) {
     uart_puts("\n> ");      // input indicator >
@@ -32,7 +32,7 @@ void main() {
       if (c == '\n' || c == '\r' || c == '\f') {  // read char until newline
         char* trimmed = strtrim(buf);             // trim whitespace
         parsebuf(trimmed);                        // parse command
-        clrstr(trimmed);                          // clear buffer
+        clrstr(buf);                              // clear buffer
         break;
       } else {
         if (c == DELETE || c == BACKSPACE) {  // delete key detected
@@ -71,6 +71,11 @@ void parsebuf(char* buf) {
   char* token = strtok(tmp, delim);  // first token is a command
   int cmd = getcmd(token);           // get command index
 
+  if (cmd == -1) {
+    uart_puts("\nWrong syntax, type 'help' to view supported commands\n");
+    return;
+  }
+
   switch (cmd) {
     case HELP:
       help(token, delim, terms);
@@ -101,9 +106,6 @@ void parsebuf(char* buf) {
       break;
     case DRAW:
       draw(token, delim, terms);
-      break;
-    default:
-      uart_puts("\nWrong syntax, type 'help' to view supported commands\n");
       break;
   }
 }
@@ -615,7 +617,17 @@ int getcolor(char* s) {
 
 // Print the welcome banner
 void banner() {
-  for (int i = 0; i < BANNER_LEN; i++) {
-    uart_puts((char*)BANNER[i]);
-  }
+  uart_puts("\n\n");
+  uart_puts("░█▀▀░█▀▀░█▀▀░▀█▀░▀▀▄░█░█░▄▀▄░▄▀▄\n");
+  uart_puts("░█▀▀░█▀▀░█▀▀░░█░░▄▀░░░▀█░░▀█░█/█\n");
+  uart_puts("░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░░░▀░▀▀░░░▀░\n");
+  uart_puts("_______  _______  ______    _______    _______  _______ \n");
+  uart_puts("|  _    ||   _   ||    _ |  |       |  |       ||       |\n");
+  uart_puts("| |_|   ||  |_|  ||   | ||  |    ___|  |   _   ||  _____|\n");
+  uart_puts("|       ||       ||   |_||_ |   |___   |  | |  || |_____ \n");
+  uart_puts("|  _   | |       ||    __  ||    ___|  |  |_|  ||_____  |\n");
+  uart_puts("| |_|   ||   _   ||   |  | ||   |___   |       | _____| |\n");
+  uart_puts("|_______||__| |__||___|  |_||_______|  |_______||_______|\n");
+  uart_puts("\n---------------------------------------------------------\n");
+  uart_puts("Nguyen Minh Trang (s3751450)\nRMIT University Vietnam\n\n");
 }

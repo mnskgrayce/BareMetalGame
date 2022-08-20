@@ -4,7 +4,6 @@
 
 #define COMMANDS_LEN 10     // number of commands
 #define COLORS_LEN 8        // number of colors
-#define BANNER_LEN 15       // number of strings in banner
 #define MAX_TERMS 7         // maximum number of terms (args) supported
 #define DEFAULT_WIDTH 1024  // default screen width
 #define DEFAULT_HEIGHT 768  // default screen height
@@ -70,25 +69,6 @@ static const char* COLORS[8] = {
     "purple",
     "cyan",
     "white",
-};
-
-// Welcome Banner
-static const char* BANNER[15] = {
-    "\n\n",
-    "░█▀▀░█▀▀░█▀▀░▀█▀░▀▀▄░█░█░▄▀▄░▄▀▄\n",
-    "░█▀▀░█▀▀░█▀▀░░█░░▄▀░░░▀█░░▀█░█/█\n",
-    "░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░░░▀░▀▀░░░▀░\n",
-    " _______  _______  ______    _______    _______  _______ \n",
-    "|  _    ||   _   ||    _ |  |       |  |       ||       |\n",
-    "| |_|   ||  |_|  ||   | ||  |    ___|  |   _   ||  _____|\n",
-    "|       ||       ||   |_||_ |   |___   |  | |  || |_____ \n",
-    "|  _   | |       ||    __  ||    ___|  |  |_|  ||_____  |\n",
-    "| |_|   ||   _   ||   |  | ||   |___   |       | _____| |\n",
-    "|_______||__| |__||___|  |_||_______|  |_______||_______|\n",
-    "\n",
-    "---------------------------------------------------------\n",
-    "Nguyen Minh Trang (s3752450)\n",
-    "RMIT University Vietnam\n\n",
 };
 
 // CLI function prototypes
