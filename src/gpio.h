@@ -2,7 +2,7 @@
 /*Peripheral physical address. It is 0xFE000000 in RBP4, 0x3F000000 in RBP3*/
 
 #define MMIO_BASE 0x3F000000  // QEMU
-// #define MMIO_BASE       0xFE000000 // Pi4
+// #define MMIO_BASE 0xFE000000  // Pi4
 
 #define GPFSEL0 ((volatile unsigned int*)(MMIO_BASE + 0x00200000))
 #define GPFSEL1 ((volatile unsigned int*)(MMIO_BASE + 0x00200004))

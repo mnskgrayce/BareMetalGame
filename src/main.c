@@ -22,9 +22,9 @@ void test_printf() {
 void main() {
   uart_init();     // set up serial console
   framebf_init();  // set up frame buffer
-  banner();        // print welcome banner
+  banner();        // print welcome banner (bugged on real board)
 
-  // test_printf();  // print sample output for printf
+  test_printf();  // print sample output for printf
 
   while (1) {
     uart_puts("\n\n> ");    // input indicator >
