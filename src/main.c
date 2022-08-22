@@ -7,22 +7,27 @@
 #include "printf.h"
 #include "uart.h"
 
+void test_printf() {
+  uart_puts("\n\n***Testing function printf...\n");
+
+  printf("Characters (with width): |%5c| |%3c|\n", 'a', 65);
+  printf("Flag symbol: %%\n", '%');
+  printf("String: %s\n", "Hello World");
+  printf("String (with width and precision): |%10.5s|\n", "Hello World");
+  printf("Numbers (with width and precision): %d %.6d |%10d|\n", 0, 1998, 2022);
+  printf("Numbers with different bases: %d %x %o\n", -100, -100, -100);
+  printf("Floats (with width and precision): |%10f| %f %.3f\n", 12.34, -56.078, 12.123456);
+}
+
 void main() {
   uart_init();     // set up serial console
   framebf_init();  // set up frame buffer
   banner();        // print welcome banner
 
-  // printf("Characters:%2c%c \n", 'a', 65);
-  // printf("Decimals: %.7d %.d\n", 1977, 650000);
-  // printf("Preceding with blanks:%5d%10d \n", 1998, 2022);
-  // printf("Some different radices: %d %x %o \n", -100, -100, -100);
-  // printf("floats:%10f %.2f\n", 12.34, 12.123456);
-  // printf("%2shoho\n", "A");
-  // printf("%.3s\n", "I'm-tired");
-  // printf("Symbol and number: %% %d \n", '%', 65);
+  // test_printf();  // print sample output for printf
 
   while (1) {
-    uart_puts("\n> ");      // input indicator >
+    uart_puts("\n\n> ");    // input indicator >
     char buf[MAX_BUF_LEN];  // init buffer
     int i = 0;
 
@@ -72,7 +77,7 @@ void parsebuf(char* buf) {
   int cmd = getcmd(token);           // get command index
 
   if (cmd == -1) {
-    uart_puts("\nWrong syntax, type 'help' to view supported commands\n");
+    uart_puts("\nWrong syntax, type HELP to view supported commands\n");
     return;
   }
 
@@ -113,7 +118,13 @@ void parsebuf(char* buf) {
 // FUNCTION 1/10: PRINT HELP
 void help(char* token, char* delim, int terms) {
   if (terms == 1) {
-    uart_puts((char*)TXT_HELP);  // get general help
+    char** p = (char**)TXT_HELP;  // start of array of pointers
+
+    while (*(p) != 0) {     // traverse until null pointer
+      char* q = (char*)*p;  // get child pointer to string
+      uart_puts((char*)q);  // print string
+      p++;                  // advance array pointer
+    }
     return;
   }
 
@@ -123,9 +134,9 @@ void help(char* token, char* delim, int terms) {
     if (cmd != -1) {
       uart_puts((char*)TXT_HELP_CMD[cmd]);  // get specific help
     } else {
-      uart_puts("\nWrong syntax, command '");
+      uart_puts("\nWrong syntax, command \"");
       uart_puts(token);
-      uart_puts("' is not found\n");
+      uart_puts("\" is not found\n");
     }
     return;
   }
@@ -140,8 +151,8 @@ void cls(int terms) {
     uart_puts((char*)TXT_HELP_CMD[CLS]);
     return;
   }
-  // Move cursor to top left and clear screen
-  uart_puts("\033[H\033[J");
+  // Clear screen and move cursor to top left
+  uart_puts("\033[2J\033[H");
 }
 
 // FUNCTION 3/10: GET BOARD REVISION
@@ -314,28 +325,28 @@ void setcolor(char* token, char* delim, int terms) {
       if ((i % 2) == 1) {                // index is flag
         if (strcmp(token, "-t") == 0) {  // raise text color flag if not already
           if (tflag == 1) {
-            uart_puts("\nWrong syntax, flag '-t' is duplicate\n");
+            uart_puts("\nWrong syntax, flag -t is duplicate\n");
             return;
           }
           tflag = 1;
         } else if (strcmp(token, "-b") == 0) {  // raise background color flag if not already
           if (tflag == 0) {
-            uart_puts("\nWrong syntax, flag '-b' is duplicate\n");
+            uart_puts("\nWrong syntax, flag -b is duplicate\n");
             return;
           }
           tflag = 0;
         } else {  // invalid flag
-          uart_puts("\nWrong syntax, flag '");
+          uart_puts("\nWrong syntax, flag \"");
           uart_puts(token);
-          uart_puts("' is invalid");
+          uart_puts("\" is invalid");
           return;
         }
       } else {  // index is color
         int color = getcolor(token);
         if (color == -1) {  // invalid color
-          uart_puts("\nWrong syntax, color '");
+          uart_puts("\nWrong syntax, color \"");
           uart_puts(token);
-          uart_puts("' is not found\n");
+          uart_puts("\" is not found\n");
           return;
         }
         if (tflag)  // check flag then assign color
@@ -396,20 +407,20 @@ void scrsize(char* token, char* delim, int terms) {
       if ((terms == 4 || terms == 7) && (i % 3) == 1) {  // index is flag
         if (strcmp(token, "-p") == 0) {                  // raise physical screen flag if not already
           if (pflag == 1) {
-            uart_puts("\nWrong syntax, flag '-p' is duplicate\n");
+            uart_puts("\nWrong syntax, flag -p is duplicate\n");
             return;
           }
           pflag = 1;
         } else if (strcmp(token, "-v") == 0) {  // raise virtual screen flag if not already
           if (pflag == 0) {
-            uart_puts("\nWrong syntax, flag '-v' is duplicate\n");
+            uart_puts("\nWrong syntax, flag -v is duplicate\n");
             return;
           }
           pflag = 0;
         } else {  // invalid flag
-          uart_puts("\nWrong syntax, flag '");
+          uart_puts("\nWrong syntax, flag \"");
           uart_puts(token);
-          uart_puts("' is invalid");
+          uart_puts("\" is invalid");
           return;
         }
       } else {                // index is width or height
@@ -584,9 +595,9 @@ void draw(char* token, char* delim, int terms) {
       return;
 
     } else {  // invalid flag
-      uart_puts("\nWrong syntax, flag '");
+      uart_puts("\nWrong syntax, flag \"");
       uart_puts(token);
-      uart_puts("' is invalid");
+      uart_puts("\" is invalid");
       return;
     }
   }

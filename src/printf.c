@@ -110,13 +110,11 @@ void printf(char *s, ...) {
       buf[j] = s[i];
       j++;
     }
-
     if (i == MAX_PRINT_SIZE - 1) break;  // buffer overflow
     i++;                                 // next
   }
 
   va_end(vl);
-
   // Print formatted string to user
   uart_puts(buf);
 }
