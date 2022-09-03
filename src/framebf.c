@@ -1,4 +1,5 @@
 // ----------------------------------- framebf.c -------------------------------------
+#include "font.h"
 #include "mbox.h"
 #include "uart.h"
 
@@ -92,125 +93,113 @@ void framebf_init() {
   }
 }
 
-void drawPixelARGB32(int x, int y, unsigned int attr) {
-  int offs = (y * pitch) + (COLOR_DEPTH / 8 * x);
-
-  /*
-  //Access and assign each byte
-  *(fb+offs )=(attr>>0)&0xFF;//BLUE
-  *(fb + offs + 1) = (attr >> 8 ) & 0xFF; //GREEN
-  *(fb + offs + 2) = (attr >> 16) & 0xFF; //RED
-  *(fb + offs + 3) = (attr >> 24) & 0xFF; //ALPHA
-  */
-
-  // Access 32-bit together
-  *((unsigned int *)(fb + offs)) = attr;
+void drawPixel(int x, int y, unsigned char attr) {
+  int offs = (y * pitch) + (x * 4);
+  *((unsigned int *)(fb + offs)) = vgapal[attr & 0x0f];
 }
 
-void drawRectARGB32(int x1, int y1, int x2, int y2, unsigned int attr, int fill) {
-  for (int y = y1; y <= y2; y++) {
-    for (int x = x1; x <= x2; x++) {
+// Attribute color is a HEX code
+// 4 MSBs represent background
+// 4 LSBs represent foreground
+// If fill=1, background is the fill and foreground is the outline
+// For example, attr=0x03 => 0 background (BLACK), 3 foreground (GREEN)
+// See color indexes in vgapl array (terminal.h), there is a 16-color pallete
+void drawRect(int x1, int y1, int x2, int y2, unsigned char attr, int fill) {
+  int y = y1;
+
+  while (y <= y2) {
+    int x = x1;
+    while (x <= x2) {
       if ((x == x1 || x == x2) || (y == y1 || y == y2))
-        drawPixelARGB32(x, y, attr);
+        drawPixel(x, y, attr);
       else if (fill)
-        drawPixelARGB32(x, y, attr);
+        drawPixel(x, y, (attr & 0xf0) >> 4);
+      x++;
     }
+    y++;
   }
 }
 
-void drawLineARGB32(int x1, int y1, int x2, int y2, unsigned int attr) {
-  double a = ((double)y2 - y1) / (x2 - x1);  // slope
-  double b = (double)y1 + (a * x1);
+void drawLine(int x1, int y1, int x2, int y2, unsigned char attr) {
+  int dx, dy, p, x, y;
 
-  for (int x = x1; x <= x2; x++) {
-    int y = (a * x) + b;
-    drawPixelARGB32(x, y, attr);
-  }
-}
+  dx = x2 - x1;
+  dy = y2 - y1;
+  x = x1;
+  y = y1;
+  p = 2 * dy - dx;
 
-void drawCircle(int xc, int yc, int x, int y, unsigned int attr, int fill) {
-  int tmpx = 0;
-  int tmpy = 0;
-
-  if (fill == 1) {
-    //
-    tmpy = yc + y;
-    while (tmpy >= yc) {
-      drawPixelARGB32(xc + x, tmpy, attr);
-      tmpy--;
+  while (x < x2) {
+    if (p >= 0) {
+      drawPixel(x, y, attr);
+      y++;
+      p = p + 2 * dy - 2 * dx;
+    } else {
+      drawPixel(x, y, attr);
+      p = p + 2 * dy;
     }
-    //
-    tmpy = yc + y;
-    while (tmpy >= yc) {
-      drawPixelARGB32(xc - x, tmpy, attr);
-      tmpy--;
-    }
-    //
-    tmpy = yc - y;
-    while (tmpy <= yc) {
-      drawPixelARGB32(xc + x, tmpy, attr);
-      tmpy++;
-    }
-    //
-    tmpy = yc - y;
-    while (tmpy <= yc) {
-      drawPixelARGB32(xc - x, tmpy, attr);
-      tmpy++;
-    }
-    //
-    tmpx = xc + y;
-    while (tmpx >= xc) {
-      drawPixelARGB32(tmpx, yc + x, attr);
-      tmpx--;
-    }
-    //
-    tmpx = xc - y;
-    while (tmpx <= xc) {
-      drawPixelARGB32(tmpx, yc + x, attr);
-      tmpx++;
-    }
-    //
-    tmpx = xc + y;
-    while (tmpx >= xc) {
-      drawPixelARGB32(tmpx, yc - x, attr);
-      tmpx--;
-    }
-    //
-    tmpx = xc - y;
-    while (tmpx <= xc) {
-      drawPixelARGB32(tmpx, yc - x, attr);
-      tmpx++;
-    }
-  } else {
-    drawPixelARGB32(xc + x, yc + y, attr);
-    drawPixelARGB32(xc - x, yc + y, attr);
-    drawPixelARGB32(xc + x, yc - y, attr);
-    drawPixelARGB32(xc - x, yc - y, attr);
-    drawPixelARGB32(xc + y, yc + x, attr);
-    drawPixelARGB32(xc - y, yc + x, attr);
-    drawPixelARGB32(xc + y, yc - x, attr);
-    drawPixelARGB32(xc - y, yc - x, attr);
-  }
-}
-
-// Function for circle-generation
-// using Bresenham's algorithm
-void drawCircleARGB32(int xc, int yc, int r, unsigned int attr, int fill) {
-  int x = 0, y = r;
-  int d = 3 - 2 * r;
-  drawCircle(xc, yc, x, y, attr, fill);
-  while (y >= x) {
-    // for each pixel we will
-    // draw all eight pixels
     x++;
-    // check for decision parameter
-    // and correspondingly
-    // update d, x, y
-    if (d > 0) {
-      y--;
-      d = d + 4 * (x - y) + 10;
-    } else
-      d = d + 4 * x + 6;
-    drawCircle(xc, yc, x, y, attr, fill);
+  }
+}
+
+void drawCircle(int x0, int y0, int radius, unsigned char attr, int fill) {
+  int x = radius;
+  int y = 0;
+  int err = 0;
+
+  while (x >= y) {
+    if (fill) {
+      drawLine(x0 - y, y0 + x, x0 + y, y0 + x, (attr & 0xf0) >> 4);
+      drawLine(x0 - x, y0 + y, x0 + x, y0 + y, (attr & 0xf0) >> 4);
+      drawLine(x0 - x, y0 - y, x0 + x, y0 - y, (attr & 0xf0) >> 4);
+      drawLine(x0 - y, y0 - x, x0 + y, y0 - x, (attr & 0xf0) >> 4);
+    }
+    drawPixel(x0 - y, y0 + x, attr);
+    drawPixel(x0 + y, y0 + x, attr);
+    drawPixel(x0 - x, y0 + y, attr);
+    drawPixel(x0 + x, y0 + y, attr);
+    drawPixel(x0 - x, y0 - y, attr);
+    drawPixel(x0 + x, y0 - y, attr);
+    drawPixel(x0 - y, y0 - x, attr);
+    drawPixel(x0 + y, y0 - x, attr);
+
+    if (err <= 0) {
+      y += 1;
+      err += 2 * y + 1;
+    }
+
+    if (err > 0) {
+      x -= 1;
+      err -= 2 * x + 1;
+    }
+  }
+}
+
+void drawChar(unsigned char ch, int x, int y, unsigned char attr) {
+  unsigned char *glyph = (unsigned char *)&font + (ch < FONT_NUMGLYPHS ? ch : 0) * FONT_BPG;
+
+  for (int i = 0; i < FONT_HEIGHT; i++) {
+    for (int j = 0; j < FONT_WIDTH; j++) {
+      unsigned char mask = 1 << j;
+      unsigned char col = (*glyph & mask) ? attr & 0x0f : (attr & 0xf0) >> 4;
+
+      drawPixel(x + j, y + i, col);
+    }
+    glyph += FONT_BPL;
+  }
+}
+
+void drawString(int x, int y, char *s, unsigned char attr) {
+  while (*s) {
+    if (*s == '\r') {
+      x = 0;
+    } else if (*s == '\n') {
+      x = 0;
+      y += FONT_HEIGHT;
+    } else {
+      drawChar(*s, x, y, attr);
+      x += FONT_WIDTH;
+    }
+    s++;
   }
 }
