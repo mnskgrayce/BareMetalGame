@@ -4,6 +4,8 @@
 #define MMIO_BASE 0x3F000000  // QEMU
 // #define MMIO_BASE 0xFE000000  // Pi4
 
+#define SAFE_ADDRESS 0x00210000  // Somewhere safe to store a lot of data
+
 #define GPFSEL0 ((volatile unsigned int*)(MMIO_BASE + 0x00200000))
 #define GPFSEL1 ((volatile unsigned int*)(MMIO_BASE + 0x00200004))
 #define GPFSEL2 ((volatile unsigned int*)(MMIO_BASE + 0x00200008))

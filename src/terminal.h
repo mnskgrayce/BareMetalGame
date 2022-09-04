@@ -1,23 +1,20 @@
-#define WIDTH 800
-#define HEIGHT 600
-
 unsigned int vgapal[] = {
-    0x000000, // 0: black
-    0x0000AA, // 1: blue
-    0x00AA00, // 2: green
-    0x00AAAA, // 3: teal
-    0xAA0000, // 4: crimson
-    0xAA00AA, // 5: purple
-    0xAA5500, // 6: brown
-    0xAAAAAA, // 7: gray
-    0x555555, // 8: dark gray
-    0x5555FF, // 9: indigo
-    0x55FF55, // A: lime green
-    0x55FFFF, // B: cyan
-    0xFF5555, // C: red
-    0xFF55FF, // D: magenta
-    0xFFFF55, // E: yellow
-    0xFFFFFF, // F: white
+    0x000000,  // 0: black
+    0x0000AA,  // 1: blue
+    0x00AA00,  // 2: green
+    0x00AAAA,  // 3: teal
+    0xAA0000,  // 4: crimson
+    0xAA00AA,  // 5: purple
+    0xAA5500,  // 6: brown
+    0xAAAAAA,  // 7: gray
+    0x555555,  // 8: dark gray
+    0x5555FF,  // 9: indigo
+    0x55FF55,  // A: lime green
+    0x55FFFF,  // B: cyan
+    0xFF5555,  // C: red
+    0xFF55FF,  // D: magenta
+    0xFFFF55,  // E: yellow
+    0xFFFFFF,  // F: white
 };
 
 enum {

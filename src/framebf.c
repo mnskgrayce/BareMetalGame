@@ -1,4 +1,6 @@
 // ----------------------------------- framebf.c -------------------------------------
+#include "framebf.h"
+
 #include "mbox.h"
 #include "terminal.h"
 #include "uart.h"
@@ -201,5 +203,35 @@ void drawString(int x, int y, char *s, unsigned char attr, int zoom) {
       x += FONT_WIDTH * zoom;
     }
     s++;
+  }
+}
+
+void moveRect(int oldx, int oldy, int width, int height, int shiftx, int shifty, unsigned char attr) {
+  unsigned int newx = oldx + shiftx, newy = oldy + shifty;
+  unsigned int xcount = 0, ycount = 0;
+  unsigned int bitmap[width][height];  // This is very unsafe if it's too big for the stack...
+  unsigned int offs;
+
+  // Copy current screen to bitmap array
+  while (xcount < width) {
+    while (ycount < height) {
+      offs = ((oldy + ycount) * pitch) + ((oldx + xcount) * 4);
+
+      bitmap[xcount][ycount] = *((unsigned int *)(fb + offs));
+      ycount++;
+    }
+    ycount = 0;
+    xcount++;
+  }
+
+  // "Delete" object (draw a black shape)
+  drawRect(oldx, oldy, oldx + width, oldy + width, attr, 1);
+
+  // Redraw bitmap
+  for (int i = newx; i < newx + width; i++) {
+    for (int j = newy; j < newy + height; j++) {
+      offs = (j * pitch) + (i * 4);
+      *((unsigned int *)(fb + offs)) = bitmap[i - newx][j - newy];
+    }
   }
 }
