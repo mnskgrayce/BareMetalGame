@@ -189,20 +189,6 @@ void drawChar(unsigned char ch, int x, int y, unsigned char attr) {
   }
 }
 
-void drawGraphicChar(unsigned char ch, int x, int y, unsigned char attr) {
-  unsigned char *glyph = (unsigned char *)&graphic_font;
-
-  for (int i = 0; i < GRAPHIC_FONT_HEIGHT; i++) {
-    for (int j = 0; j < GRAPHIC_FONT_WIDTH; j++) {
-      unsigned char mask = 1 << j;
-      unsigned char col = (*glyph & mask) ? attr & 0x0f : (attr & 0xf0) >> 4;
-
-      drawPixel(x + j, y + i, col);
-    }
-    glyph += GRAPHIC_FONT_BPL;
-  }
-}
-
 void drawString(int x, int y, char *s, unsigned char attr) {
   while (*s) {
     if (*s == '\r') {
