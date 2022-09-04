@@ -24,6 +24,8 @@ void main() {
   drawString(200, 200, "Goodbye, cruel world", 0x0f);
 
   drawLine(100, 500, 350, 700, 0x0c);
+  drawGraphicChar('0', 700, 700, 0x05);
+  
 
   while (1) {
     char c = uart_getc();
