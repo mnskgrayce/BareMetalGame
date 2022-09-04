@@ -1,5 +1,5 @@
 unsigned int vgapal[] = {
-    0x000000,
+    0x000000,  // 0: black
     0x0000AA,
     0x00AA00,
     0x00AAAA,
@@ -14,7 +14,8 @@ unsigned int vgapal[] = {
     0xFF5555,
     0xFF55FF,
     0xFFFF55,
-    0xFFFFFF};
+    0xFFFFFF,  // 15: white
+};
 
 enum {
   FONT_WIDTH = 8,
