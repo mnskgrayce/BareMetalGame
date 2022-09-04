@@ -62,6 +62,9 @@ void initShip() {
 }
 
 void main() {
+  uart_init();     // set up serial console
+  framebf_init();  // set up frame buffer
+
   team_banner();
   initShip();
 
@@ -85,13 +88,24 @@ void main() {
         moveObject(ship, ship->width / 2, 0);
       }
     }
+
+    // Move ship up
+    if (c == 'w') {
+      if (ship->y >= MARGIN + (ship->height / 2)) {
+        moveObject(ship, 0, -(ship->height / 2));
+      }
+    }
+
+    // Move ship down
+    if (c == 's') {
+      if (ship->y + ship->height + (ship->height / 2) <= HEIGHT - MARGIN) {
+        moveObject(ship, 0, ship->height / 2);
+      }
+    }
   }
 }
 
 void team_banner() {
-  uart_init();     // set up serial console
-  framebf_init();  // set up frame buffer
-
   drawRect(25, 25, 525, 125, 0xb0, 1);                          // cyan fill black border
   drawRect(20, 20, 520, 120, 0xf0, 1);                          // white fill black border
   drawString(40, 40, "Nguyen Minh Trang - s3751450", 0xf9, 2);  // indigo text white bg
