@@ -12,7 +12,6 @@ struct Object {
   unsigned int y;
   unsigned int width;
   unsigned int height;
-  unsigned char alive;
 };
 
 struct Object ship = {};
@@ -20,7 +19,6 @@ struct Object bullet = {};
 
 void removeObject(struct Object *object) {
   drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
-  object->alive = 0;
 }
 
 void moveObject(struct Object *object, int xoff, int yoff) {
@@ -34,6 +32,8 @@ void initShip() {
   int baseHeight = 20;
   int headWidth = 30;
   int headHeight = 15;
+  int wedgeWidth = 10;
+  int wedgeHeight = 7;
 
   // Draw base
   drawRect((WIDTH - baseWidth) / 2,
@@ -49,33 +49,28 @@ void initShip() {
            (HEIGHT - MARGIN - baseHeight - 1), 0xbb,
            1);
 
+  // Draw wedge
+  drawRect((WIDTH - wedgeWidth) / 2,
+           (HEIGHT - MARGIN - baseHeight - headHeight - 1),
+           (WIDTH - wedgeWidth) / 2 + wedgeWidth,
+           (HEIGHT - MARGIN - baseHeight - 1 - (headHeight - wedgeHeight)), 0x00,
+           1);
+
   ship.x = (WIDTH - baseWidth) / 2;
   ship.y = (HEIGHT - MARGIN - baseHeight - headHeight - 1);
   ship.width = baseWidth;
   ship.height = baseHeight + headHeight + 1;
-  ship.alive = 1;
 }
 
 void initBullet() {
-  // int bulletRadius = 4;
+  int bulletRadius = 4;
 
-  // drawCircle(ship->x + (ship->width) / 2, ship->y - (bulletRadius * 2), bulletRadius, 0xee, 1);
+  drawCircle(ship.x + (ship.width / 2), ship.y - (bulletRadius * 2), bulletRadius, 0xee, 1);
 
-  // bullet->x = (WIDTH / 2) - bulletRadius;
-  // bullet->y = (HEIGHT - MARGIN - ship->height - (bulletRadius * 2));
-  // bullet->width = bulletRadius * 2;
-  // bullet->height = bulletRadius * 2;
-  // bullet->alive = 1;
-
-  int ballradius = 5;
-
-  drawCircle(WIDTH / 2, HEIGHT / 2, ballradius, 0xee, 1);
-
-  bullet.x = (WIDTH / 2) - ballradius;
-  bullet.y = (HEIGHT / 2) - ballradius;
-  bullet.width = ballradius * 2;
-  bullet.height = ballradius * 2;
-  bullet.alive = 1;
+  bullet.x = ship.x + (ship.width / 2) - bulletRadius;
+  bullet.y = ship.y - (bulletRadius * 2) - bulletRadius;
+  bullet.width = bulletRadius * 2;
+  bullet.height = bulletRadius * 2;
 }
 
 void parseShipMovement(char c) {
@@ -127,30 +122,18 @@ void main() {
 
   // Later, refactor this to endgame condition
   while (!endgame) {
+    moveObject(&bullet, velocity_x, -velocity_y);  // Shoot upwards
+
+    if (bullet.y <= MARGIN) {  // Bullet hit the ceiling
+      removeObject(&bullet);   // Delete current bullet
+      initBullet();            // Draw next bullet
+    }
+
     if ((c = getUart())) {
-      // Read c and move ship if necessary
-      parseShipMovement(c);
+      parseShipMovement(c);  // Read char and move ship if necessary
     }
 
-    wait_msec(4000);  // wait a bit
-    moveObject(&bullet, velocity_x, -velocity_y);
-
-    // Check we're in the game arena still
-    if (bullet.x + bullet.width >= WIDTH - MARGIN) {
-      velocity_x = -velocity_x;
-    } else if (bullet.x <= MARGIN) {
-      velocity_x = -velocity_x;
-    } else if (bullet.y + bullet.height >= HEIGHT - MARGIN) {
-      // In the paddle game, it's time to decrease lives
-
-      removeObject(&bullet);
-      removeObject(&ship);
-
-      initBullet();
-      initShip();
-    } else if (bullet.y <= MARGIN) {  // Bullet hit the ceiling
-      velocity_y = -velocity_y;
-    }
+    wait_msec(3000);  // Delay...
   }
 
   while (1)
