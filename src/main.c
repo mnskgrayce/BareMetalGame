@@ -8,7 +8,6 @@
 #include "uart.h"
 
 struct Object {
-  unsigned int type;
   unsigned int x;
   unsigned int y;
   unsigned int width;
@@ -16,14 +15,13 @@ struct Object {
   unsigned char alive;
 };
 
-enum {
-  OBJ_NONE = 0,
-  OBJ_SHIP = 1,
-};
+struct Object ship = {};
+struct Object bullet = {};
 
-unsigned int numobjs = 0;
-struct Object *objects = (struct Object *)SAFE_ADDRESS;
-struct Object *ship;
+void removeObject(struct Object *object) {
+  drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
+  object->alive = 0;
+}
 
 void moveObject(struct Object *object, int xoff, int yoff) {
   moveRect(object->x, object->y, object->width, object->height, xoff, yoff, 0x00);
@@ -51,14 +49,63 @@ void initShip() {
            (HEIGHT - MARGIN - baseHeight - 1), 0xbb,
            1);
 
-  objects[numobjs].type = OBJ_SHIP;
-  objects[numobjs].x = (WIDTH - baseWidth) / 2;
-  objects[numobjs].y = (HEIGHT - MARGIN - baseHeight - headHeight - 1);
-  objects[numobjs].width = baseWidth;
-  objects[numobjs].height = baseHeight + headHeight + 1;
-  objects[numobjs].alive = 1;
-  ship = &objects[numobjs];
-  numobjs++;
+  ship.x = (WIDTH - baseWidth) / 2;
+  ship.y = (HEIGHT - MARGIN - baseHeight - headHeight - 1);
+  ship.width = baseWidth;
+  ship.height = baseHeight + headHeight + 1;
+  ship.alive = 1;
+}
+
+void initBullet() {
+  // int bulletRadius = 4;
+
+  // drawCircle(ship->x + (ship->width) / 2, ship->y - (bulletRadius * 2), bulletRadius, 0xee, 1);
+
+  // bullet->x = (WIDTH / 2) - bulletRadius;
+  // bullet->y = (HEIGHT - MARGIN - ship->height - (bulletRadius * 2));
+  // bullet->width = bulletRadius * 2;
+  // bullet->height = bulletRadius * 2;
+  // bullet->alive = 1;
+
+  int ballradius = 5;
+
+  drawCircle(WIDTH / 2, HEIGHT / 2, ballradius, 0xee, 1);
+
+  bullet.x = (WIDTH / 2) - ballradius;
+  bullet.y = (HEIGHT / 2) - ballradius;
+  bullet.width = ballradius * 2;
+  bullet.height = ballradius * 2;
+  bullet.alive = 1;
+}
+
+void parseShipMovement(char c) {
+  // Move ship left
+  if (c == 'a') {
+    if (ship.x >= MARGIN + (ship.width / 3)) {
+      moveObject(&ship, -(ship.width / 3), 0);
+    }
+  }
+
+  // Move ship right
+  else if (c == 'd') {
+    if (ship.x + ship.width + (ship.width / 3) <= WIDTH - MARGIN) {
+      moveObject(&ship, ship.width / 3, 0);
+    }
+  }
+
+  // Move ship up
+  else if (c == 'w') {
+    if (ship.y >= MARGIN + (ship.height / 3)) {
+      moveObject(&ship, 0, -(ship.height / 3));
+    }
+  }
+
+  // Move ship down
+  else if (c == 's') {
+    if (ship.y + ship.height + (ship.height / 3) <= HEIGHT - MARGIN) {
+      moveObject(&ship, 0, ship.height / 3);
+    }
+  }
 }
 
 void main() {
@@ -67,42 +114,47 @@ void main() {
 
   team_banner();
   initShip();
+  initBullet();
 
-  // drawCircle(960, 540, 250, 0x0e, 0);
-  // drawCircle(960, 540, 50, 0x13, 1);
-  // drawLine(100, 500, 350, 700, 0x0c);
+  int velocity_x = 0;
+  int velocity_y = 1;
+  unsigned char c = 0;  // user input
+  int endgame = 0;
 
-  while (1) {
-    char c = uart_getc();
+  // Wait for keypress
+  while (!getUart())
+    ;
 
-    // Move ship left
-    if (c == 'a') {
-      if (ship->x >= MARGIN + (ship->width / 2)) {
-        moveObject(ship, -(ship->width / 2), 0);
-      }
+  // Later, refactor this to endgame condition
+  while (!endgame) {
+    if ((c = getUart())) {
+      // Read c and move ship if necessary
+      parseShipMovement(c);
     }
 
-    // Move ship right
-    if (c == 'd') {
-      if (ship->x + ship->width + (ship->width / 2) <= WIDTH - MARGIN) {
-        moveObject(ship, ship->width / 2, 0);
-      }
-    }
+    wait_msec(4000);  // wait a bit
+    moveObject(&bullet, velocity_x, -velocity_y);
 
-    // Move ship up
-    if (c == 'w') {
-      if (ship->y >= MARGIN + (ship->height / 2)) {
-        moveObject(ship, 0, -(ship->height / 2));
-      }
-    }
+    // Check we're in the game arena still
+    if (bullet.x + bullet.width >= WIDTH - MARGIN) {
+      velocity_x = -velocity_x;
+    } else if (bullet.x <= MARGIN) {
+      velocity_x = -velocity_x;
+    } else if (bullet.y + bullet.height >= HEIGHT - MARGIN) {
+      // In the paddle game, it's time to decrease lives
 
-    // Move ship down
-    if (c == 's') {
-      if (ship->y + ship->height + (ship->height / 2) <= HEIGHT - MARGIN) {
-        moveObject(ship, 0, ship->height / 2);
-      }
+      removeObject(&bullet);
+      removeObject(&ship);
+
+      initBullet();
+      initShip();
+    } else if (bullet.y <= MARGIN) {  // Bullet hit the ceiling
+      velocity_y = -velocity_y;
     }
   }
+
+  while (1)
+    ;
 }
 
 void team_banner() {
