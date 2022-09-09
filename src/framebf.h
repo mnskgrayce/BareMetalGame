@@ -3,6 +3,7 @@
 #define WIDTH 800
 #define HEIGHT 600
 #define MARGIN 20
+#define VIRTWIDTH (WIDTH - (2 * MARGIN))
 
 void framebf_init();
 void drawPixel(int x, int y, unsigned char attr);
