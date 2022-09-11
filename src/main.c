@@ -232,24 +232,48 @@ void drawScoreboard(int score, int lives) {
   drawChar((char)lives + 0x30, (WIDTH / 2) - 30 + (8 * 20 * 2), MARGIN - 10, 0x0b, 2);
 }
 
+void drawStars() {
+  int xStart = MARGIN + 5;
+
+  for (int i = 0; i < 2; i++) {
+    drawRect(xStart - 5, 180, xStart - 2, 195, 0x11, 1);
+    drawRect(xStart - 10, 185, xStart + 3, 188, 0x11, 1);
+
+    drawRect(xStart - 12, 280, xStart - 9, 295, 0x11, 1);
+    drawRect(xStart - 17, 285, xStart - 4, 288, 0x11, 1);
+
+    drawRect(xStart, 330, xStart + 3, 335, 0x11, 1);
+
+    drawRect(xStart - 12, 420, xStart - 10, 435, 0x11, 1);
+    drawRect(xStart - 17, 425, xStart - 5, 428, 0x11, 1);
+
+    drawRect(xStart - 5, 500, xStart - 2, 515, 0x11, 1);
+    drawRect(xStart - 10, 505, xStart + 3, 508, 0x11, 1);
+
+    drawRect(xStart - 10, 550, xStart - 7, 555, 0x11, 1);
+
+    xStart += WIDTH - (MARGIN * 2) + 5;
+  }
+}
+
 void parseShipMovement(char c) {
   // Move ship left
   if (c == 'a' || c == 'A') {
-    if (ship.x >= MARGIN + (ship.width / 3)) {
+    if (ship.x >= MARGIN + (ship.width / 3) + 20) {
       moveObject(&ship, -(ship.width / 3), 0);
     }
   }
 
   // Move ship right
   else if (c == 'd' || c == 'D') {
-    if (ship.x + ship.width + (ship.width / 3) <= WIDTH - MARGIN) {
+    if (ship.x + ship.width + (ship.width / 3) <= WIDTH - MARGIN - 20) {
       moveObject(&ship, ship.width / 3, 0);
     }
   }
 
   // Move ship up
   else if (c == 'w' || c == 'W') {
-    if (ship.y >= MARGIN + (ship.height / 3)) {
+    if (ship.y >= MARGIN + (ship.height * 3)) {
       moveObject(&ship, 0, -(ship.height / 3));
     }
   }
@@ -286,6 +310,8 @@ void main() {
 
   struct Object *hitChicken;
 
+  drawStars();
+
   initChickens();
   for (int i = 0; i < COLS; i++) {
     initChickenBullet(i);
@@ -313,7 +339,7 @@ void main() {
         removeObject(hitChicken);
         chickenColumns--;
 
-        points++;
+        points += 10;
         drawScoreboard(points, lives);
       }
     }
