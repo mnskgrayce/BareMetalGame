@@ -279,6 +279,7 @@ void main() {
 
   int lives = NUM_LIVES;
   int points = 0;
+  int direction = -1;
 
   int velocity_x = 1;
   int velocity_y = 1;
@@ -331,10 +332,9 @@ void main() {
         initBullet();
 
         drawScoreboard(points, lives);
-
       } else {
         // Chickens keep shooting down
-        moveObject(&chickenBullets[i], 0, velocity_y);
+        moveObject(&chickenBullets[i], 0, velocity_y * 2);
 
         // Chicken bullet is out of screen, draw a new one
         if (chickenBullets[i].y + chickenBullets[i].height >= HEIGHT - MARGIN) {
@@ -348,7 +348,7 @@ void main() {
     }
 
     // Ship keeps shooting up
-    moveObject(&bullet, 0, -velocity_y * 2);
+    moveObject(&bullet, 0, -velocity_y * 3);
 
     // Ship bullet is out of screen, draw a new one
     if (bullet.y <= (MARGIN + 10)) {
@@ -356,11 +356,19 @@ void main() {
       initBullet();
     }
 
-    wait_msec(4000);  // Delay...
+    // Check if chickens are going out of bound
+    if (chickens[0].x < (MARGIN) ||
+        chickens[COLS - 1].x > (WIDTH - MARGIN - 55)) {
+      direction *= -1;
+    }
 
-    // for (int i = 0; i < COLS; i++) {
-    //   moveObject(&chickens[i], -velocity_x, 0);
-    // }
+    // Move chickens left and right
+    for (int i = 0; i < COLS; i++) {
+      moveObject(&chickens[i], direction * velocity_x, 0);
+      wait_msec(1800);  // Delay...
+    }
+
+    wait_msec(2200);  // Delay...
   }
 
   int zoom = WIDTH / 192;
@@ -370,7 +378,7 @@ void main() {
   if (chickenColumns == 0)
     drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You won!", 0x02, zoom);
   else
-    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "Game over!", 0x04, zoom);
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You lost!", 0x04, zoom);
 
   while (1)
     ;
