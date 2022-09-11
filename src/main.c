@@ -132,31 +132,82 @@ void initBullet() {
 }
 
 void initChickens() {
-  int chickenWidth = 70;
-  int chickenHeight = 25;
-  static int chickenColors[COLS] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+  int baseWidth = 60;
+  int baseHeight = 30;
+  int headWidth = 25;
+  int headHeight = 17;
 
-  int yChicken = MARGIN + chickenHeight;
-  int xChicken = MARGIN + (VIRTWIDTH / COLS / 2) - (chickenWidth / 2);
+  static int chickenColors[COLS] = {0xff, 0xaa, 0x77, 0x55, 0x33, 0xee};
+
+  int yChicken = MARGIN + baseHeight;
+  int xChicken = MARGIN + (VIRTWIDTH / COLS / 2) - (baseWidth / 2);
 
   for (int i = 0; i < COLS; i++) {
-    drawRect(xChicken, yChicken, xChicken + chickenWidth, yChicken + chickenHeight, chickenColors[i], 1);
+    // Draw head
+    drawRect(xChicken + 10,
+             yChicken,
+             xChicken + 10 + headWidth,
+             yChicken + headHeight,
+             chickenColors[i],
+             1);
 
+    // Draw comb
+    drawRect(xChicken + 10, yChicken, xChicken + 10 + headWidth / 2, yChicken + 5, 0xcc, 1);
+
+    // Draw base
+    drawRect(xChicken,
+             yChicken + headHeight,
+             xChicken + baseWidth,
+             yChicken + headHeight + baseHeight,
+             chickenColors[i],
+             1);
+
+    drawRect(xChicken + 54,
+             yChicken + headHeight + 8,
+             xChicken + 60,
+             yChicken + headHeight + 12,
+             0x00,
+             1);
+
+    // Draw corner (left)
+    drawRect(xChicken,
+             yChicken + headHeight + baseHeight - 5,
+             xChicken + 5,
+             yChicken + headHeight + baseHeight,
+             0x00,
+             1);
+
+    // Draw corner (right)
+    drawRect(xChicken + baseWidth - 5,
+             yChicken + headHeight + baseHeight - 5,
+             xChicken + baseWidth,
+             yChicken + headHeight + baseHeight,
+             0x00,
+             1);
+
+    // Draw eye
+    drawRect(xChicken + 17, yChicken + 10, xChicken + 22, yChicken + 15, 0x00, 1);
+
+    // Draw beak
+    drawRect(xChicken + 4, yChicken + 11, xChicken + 12, yChicken + 16, 0x66, 1);
+
+    // Add to chicken array
     chickens[numChickens].type = OBJ_CHICKEN;
     chickens[numChickens].x = xChicken;
     chickens[numChickens].y = yChicken;
-    chickens[numChickens].width = chickenWidth;
-    chickens[numChickens].height = chickenHeight;
+    chickens[numChickens].width = baseWidth;
+    chickens[numChickens].height = baseHeight + headHeight;
     chickens[numChickens].alive = 1;
     numChickens++;
 
+    // Set cursor to next chicken
     xChicken += (VIRTWIDTH / COLS);
   }
 }
 
 // Draw a new chicken bullet (by chicken index)
 void initChickenBullet(int i) {
-  int bulletRadius = 4;
+  int bulletRadius = 6;
 
   drawCircle(chickens[i].x + (chickens[i].width / 2), chickens[i].y + chickens[i].height + (bulletRadius * 3), bulletRadius, 0xcc, 1);
 
@@ -168,6 +219,17 @@ void initChickenBullet(int i) {
   chickenBullets[i].alive = 1;
 
   numChickens++;
+}
+
+void drawScoreboard(int score, int lives) {
+  char tens = score / 10;
+  score -= (10 * tens);
+  char ones = score;
+
+  drawString((WIDTH / 2) - 300, MARGIN - 10, "Score: 0                      Lives: ", 0x0b, 2);
+  drawChar(tens + 0x30, (WIDTH / 2) - 300 + (8 * 8 * 2), MARGIN - 10, 0x0b, 2);
+  drawChar(ones + 0x30, (WIDTH / 2) - 300 + (8 * 9 * 2), MARGIN - 10, 0x0b, 2);
+  drawChar((char)lives + 0x30, (WIDTH / 2) - 30 + (8 * 20 * 2), MARGIN - 10, 0x0b, 2);
 }
 
 void parseShipMovement(char c) {
@@ -215,6 +277,14 @@ void main() {
 
   unsigned char userChar = 0;  // user input
 
+  int lives = NUM_LIVES;
+  int points = 0;
+
+  int velocity_x = 1;
+  int velocity_y = 1;
+
+  struct Object *hitChicken;
+
   initChickens();
   for (int i = 0; i < COLS; i++) {
     initChickenBullet(i);
@@ -223,10 +293,7 @@ void main() {
   initShip();
   initBullet();
 
-  int lives = NUM_LIVES;
-  int velocity_x = 0;
-  int velocity_y = 1;
-  struct Object *hitChicken;
+  drawScoreboard(points, lives);
 
   // Wait for keypress
   while (!getUart())
@@ -244,10 +311,11 @@ void main() {
       if (hitChicken->type == OBJ_CHICKEN) {
         removeObject(hitChicken);
         chickenColumns--;
+
+        points++;
+        drawScoreboard(points, lives);
       }
     }
-
-    wait_msec(3000);  // Delay...
 
     // Check each chicken to see if it has hit the ship
     for (int i = 0; i < COLS; i++) {
@@ -261,9 +329,12 @@ void main() {
 
         initShip();
         initBullet();
+
+        drawScoreboard(points, lives);
+
       } else {
         // Chickens keep shooting down
-        moveObject(&chickenBullets[i], velocity_x, velocity_y);
+        moveObject(&chickenBullets[i], 0, velocity_y);
 
         // Chicken bullet is out of screen, draw a new one
         if (chickenBullets[i].y + chickenBullets[i].height >= HEIGHT - MARGIN) {
@@ -277,13 +348,19 @@ void main() {
     }
 
     // Ship keeps shooting up
-    moveObject(&bullet, velocity_x, -velocity_y);
+    moveObject(&bullet, 0, -velocity_y * 2);
 
-    // SHip bullet is out of screen, draw a new one
-    if (bullet.y <= MARGIN) {
+    // Ship bullet is out of screen, draw a new one
+    if (bullet.y <= (MARGIN + 10)) {
       removeObject(&bullet);
       initBullet();
     }
+
+    wait_msec(4000);  // Delay...
+
+    // for (int i = 0; i < COLS; i++) {
+    //   moveObject(&chickens[i], -velocity_x, 0);
+    // }
   }
 
   int zoom = WIDTH / 192;
@@ -291,7 +368,7 @@ void main() {
   int strheight = 8 * zoom;
 
   if (chickenColumns == 0)
-    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "Well done!", 0x02, zoom);
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You won!", 0x02, zoom);
   else
     drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "Game over!", 0x04, zoom);
 
