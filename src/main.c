@@ -40,13 +40,7 @@ struct Object bullet = {};
 
 // Delete an entity and mark dead
 void removeObject(struct Object *object) {
-  // Add a small padding to prevent "leftover" UI
-  drawRect(object->x - 20,
-           object->y - 5,
-           object->x + object->width + 20,
-           object->y + object->height + 5,
-           0,
-           1);
+  drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
   object->alive = 0;
 }
 
@@ -129,9 +123,9 @@ void initShip() {
 
 // Initialize ship bullet position
 void initBullet() {
-  int bulletRadius = 4;
+  int bulletRadius = 5;
 
-  drawCircle(ship.x + (ship.width / 2), ship.y - (bulletRadius * 2), bulletRadius, 0xee, 1);
+  drawCircle(ship.x + (ship.width / 2), ship.y - (bulletRadius * 2), bulletRadius, 0xe0, 1);
 
   bullet.type = OBJ_BULLET;
   bullet.x = ship.x + (ship.width / 2) - bulletRadius;
@@ -218,9 +212,9 @@ void initChickens() {
 
 // Draw a new chicken bullet for each chicken (by index)
 void initChickenBullet(int i) {
-  int bulletRadius = 6;
+  int bulletRadius = 7;
 
-  drawCircle(chickens[i].x + (chickens[i].width / 2), chickens[i].y + chickens[i].height + (bulletRadius * 3), bulletRadius, 0xcc, 1);
+  drawCircle(chickens[i].x + (chickens[i].width / 2), chickens[i].y + chickens[i].height + (bulletRadius * 3), bulletRadius, 0xc0, 1);
 
   chickenBullets[i].type = OBJ_BULLET;
   chickenBullets[i].x = chickens[i].x + (chickens[i].width / 2) - bulletRadius;
@@ -429,7 +423,7 @@ void main() {
       moveObject(&bullet, 0, -velocity_y * 3);
 
       // Ship bullet is out of screen, draw a new one
-      if (bullet.y <= (MARGIN + 30)) {
+      if (bullet.y <= (MARGIN + 70)) {
         removeObject(&bullet);
         initBullet();
       }
