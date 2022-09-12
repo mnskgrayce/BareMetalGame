@@ -40,7 +40,13 @@ struct Object bullet = {};
 
 // Delete an entity and mark dead
 void removeObject(struct Object *object) {
-  drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
+  // Add a small padding to prevent "leftover" UI
+  drawRect(object->x - 20,
+           object->y - 5,
+           object->x + object->width + 20,
+           object->y + object->height + 5,
+           0,
+           1);
   object->alive = 0;
 }
 
@@ -299,6 +305,8 @@ void parseShipMovement(char c) {
       moveObject(&ship, 0, ship.height / 3);
     }
   }
+
+  wait_msec(100);  // Delay...
 }
 
 // Draw the team banner
@@ -465,8 +473,8 @@ void main() {
 
     // Display replay message
     zoom = 2;
-    strwidth = 20 * 8 * zoom;
-    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press R to replay...", 0x0b, zoom);
+    strwidth = 22 * 8 * zoom;
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press <R> to replay...", 0x0b, zoom);
 
     // Game has ended, wait for keypress
     while (1) {
