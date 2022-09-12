@@ -4,7 +4,7 @@
 #include "gpio.h"
 
 /**
- * Set baud rate and characteristics (57600 8N1) and map to GPIO
+ * Set baud rate and characteristics (152000 8N1) and map to GPIO
  */
 void uart_init() {
   register unsigned int r;
@@ -16,7 +16,7 @@ void uart_init() {
   *AUX_MU_MCR = 0;     // RTS (request to send)
   *AUX_MU_IER = 0;     // disable interrupts
   *AUX_MU_IIR = 0xc6;  // clear FIFOs
-  *AUX_MU_BAUD = 540;  // 57600 baud   (system_clk_freq/(baud_rate*8) - 1)
+  *AUX_MU_BAUD = 270;  // 152000 baud   (system_clk_freq/(baud_rate*8) - 1)
 
   /* map uart1 to GPIO pins */
   r = *GPFSEL1;
