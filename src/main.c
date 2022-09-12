@@ -38,11 +38,13 @@ struct Object chickenBullets[COLS] = {};
 struct Object ship = {};
 struct Object bullet = {};
 
+// Delete an entity and mark dead
 void removeObject(struct Object *object) {
   drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
   object->alive = 0;
 }
 
+// Move an entity on the screen
 void moveObject(struct Object *object, int xoff, int yoff) {
   moveRect(object->x, object->y, object->width, object->height, xoff, yoff, 0x00);
   object->x = object->x + xoff;
@@ -81,6 +83,7 @@ int chickenHitShip(struct Object *with, int xoff, int yoff) {
   return 0;
 }
 
+// Initialize ship position
 void initShip() {
   int baseWidth = 60;
   int baseHeight = 20;
@@ -118,6 +121,7 @@ void initShip() {
   ship.alive = 1;
 }
 
+// Initialize ship bullet position
 void initBullet() {
   int bulletRadius = 4;
 
@@ -131,6 +135,7 @@ void initBullet() {
   bullet.alive = 1;
 }
 
+// Initialize chickens
 void initChickens() {
   int baseWidth = 60;
   int baseHeight = 30;
@@ -205,7 +210,7 @@ void initChickens() {
   }
 }
 
-// Draw a new chicken bullet (by chicken index)
+// Draw a new chicken bullet for each chicken (by index)
 void initChickenBullet(int i) {
   int bulletRadius = 6;
 
@@ -221,6 +226,7 @@ void initChickenBullet(int i) {
   numChickens++;
 }
 
+// Draw the scoreboard
 void drawScoreboard(int score, int lives) {
   char tens = score / 10;
   score -= (10 * tens);
@@ -232,6 +238,7 @@ void drawScoreboard(int score, int lives) {
   drawChar((char)lives + 0x30, (WIDTH / 2) - 30 + (8 * 20 * 2), MARGIN - 10, 0x0b, 2);
 }
 
+// Draw decorative stars
 void drawStars() {
   int xStart = MARGIN + 5;
 
@@ -256,12 +263,14 @@ void drawStars() {
   }
 }
 
+// Clear messages in the middle of the screen
 void clearGameMessages() {
   int xStart = MARGIN + 20;
   int xEnd = xStart + WIDTH - (MARGIN * 2) - 100;
   drawRect(xStart, HEIGHT / 2 - 50, xEnd, HEIGHT / 2 + 50, 0x00, 1);
 }
 
+// Read user input and move ship
 void parseShipMovement(char c) {
   // Move ship left
   if (c == 'a' || c == 'A') {
@@ -292,6 +301,7 @@ void parseShipMovement(char c) {
   }
 }
 
+// Draw the team banner
 void team_banner() {
   drawRect(25, 25, 525, 125, 0xb0, 1);                          // cyan fill black border
   drawRect(20, 20, 520, 120, 0xf0, 1);                          // white fill black border
@@ -309,10 +319,9 @@ void main() {
   // Game variables
   int lives;
   int points;
-  int direction;
-
   int velocity_x;
   int velocity_y;
+  int chickenDirection;
 
   // UI variables to display endgame messages
   int zoom = 1;
@@ -324,27 +333,24 @@ void main() {
     userChar = 0;
 
     // Reset all values
-    lives = NUM_LIVES;
-    points = 0;
     chickenColumns = COLS;
     numChickens = 0;
+    chickenDirection = -1;
+    struct Object *hitChicken;
 
-    direction = -1;
+    lives = NUM_LIVES;
+    points = 0;
     velocity_x = 1;
     velocity_y = 1;
 
-    struct Object *hitChicken;
-
+    // Draw game UI
     drawStars();
-
     initChickens();
     for (int i = 0; i < COLS; i++) {
       initChickenBullet(i);
     }
-
     initShip();
     initBullet();
-
     drawScoreboard(points, lives);
 
     // Wait for keypress
@@ -369,7 +375,6 @@ void main() {
         if (hitChicken->type == OBJ_CHICKEN) {
           removeObject(hitChicken);
           chickenColumns--;
-
           points += 10;
           drawScoreboard(points, lives);
         }
@@ -421,15 +426,15 @@ void main() {
         initBullet();
       }
 
-      // Check if chickens are going out of bound
+      // Change direction if chickens are moving out of bound
       if (chickens[0].x < (MARGIN) ||
           chickens[COLS - 1].x > (WIDTH - MARGIN - 60)) {
-        direction *= -1;
+        chickenDirection *= -1;
       }
 
       // Move chickens left and right
       for (int i = 0; i < COLS; i++) {
-        moveObject(&chickens[i], direction * velocity_x, 0);
+        moveObject(&chickens[i], chickenDirection * velocity_x, 0);
         wait_msec(1800);  // Delay...
       }
 
@@ -458,6 +463,7 @@ void main() {
       drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You lost!", 0x04, zoom);
     }
 
+    // Display replay message
     zoom = 2;
     strwidth = 20 * 8 * zoom;
     drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press R to replay...", 0x0b, zoom);
