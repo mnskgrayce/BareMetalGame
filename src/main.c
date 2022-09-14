@@ -99,21 +99,20 @@ void resetGame() {
   velocity_x = 1;
   velocity_y = 1;
 
-  // Reset points and lives if level one
-  // Keep these if going to level two
-  if (state == GAME_LEVEL_ONE) {
+  // Keep lives and points if going to level two
+  if (state != GAME_LEVEL_TWO) {
     lives = NUM_LIVES;
     points = 0;
   }
+
+  // Update UI
+  drawStars();
+  drawScoreboard(points, lives);
 }
 
 void levelOne() {
   // Reset all values and UI
   resetGame();
-
-  // Initialize level one
-  drawStars();
-  drawScoreboard(points, lives);
 
   // Initialize game entities
   initChickens();
@@ -123,14 +122,7 @@ void levelOne() {
   initShip();
   initBullet();
 
-  // Wait for keypress
-  zoom = 2;
-  strwidth = 25 * 8 * zoom;
-  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press any key to start...", 0x0b, zoom);
-
-  while (!getUart())
-    ;
-  clearGameMessages();
+  waitForKeyPress();
 
   // Start shooting!
   while (lives > 0 && chickenColumns > 0) {
@@ -255,6 +247,7 @@ void levelOne() {
       if (userChar == 'n' || userChar == 'N') {
         clearGameMessages();  // clear screen
         state = GAME_LEVEL_TWO;
+        break;
       } else if (userChar == 'r' || userChar == 'R') {
         clearGameMessages();  // clear screen
         state = GAME_LEVEL_ONE;
@@ -268,7 +261,23 @@ void levelOne() {
   };
 }
 
-void levelTwo() {}
+void levelTwo() {
+  // Reset all values and UI
+  resetGame();
+
+  waitForKeyPress();
+}
+
+void waitForKeyPress() {
+  // Wait for keypress
+  zoom = 2;
+  strwidth = 25 * 8 * zoom;
+  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 35, "Press any key to start...", 0x0b, zoom);
+
+  while (!getUart())
+    ;
+  clearGameMessages();
+}
 
 // Delete an entity and mark dead
 void removeObject(Object* object) {

@@ -19,3 +19,4 @@ void gameMenu();
 void resetGame();
 void levelOne();
 void levelTwo();
+void waitForKeyPress();
