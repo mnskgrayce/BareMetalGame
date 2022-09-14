@@ -1,4 +1,6 @@
 // ----------------------------------- main.c -------------------------------------
+#include "main.h"
+
 #include "framebf.h"
 #include "mbox.h"
 #include "oslib.h"
@@ -32,27 +34,199 @@ enum {
 
 unsigned int numChickens = 0;
 
-struct Object chickens[COLS] = {};
-struct Object chickenBullets[COLS] = {};
+Object chickens[COLS] = {};
+Object chickenBullets[COLS] = {};
 
-struct Object ship = {};
-struct Object bullet = {};
+Object ship = {};
+Object bullet = {};
+
+void main() {
+  uart_init();     // set up serial console
+  framebf_init();  // set up frame buffer
+
+  unsigned char userChar;  // user input
+
+  // Game variables
+  int lives;
+  int points;
+  int velocity_x;
+  int velocity_y;
+  int chickenDirection;
+
+  // UI variables to display endgame messages
+  int zoom = 1;
+  int strwidth = 0;
+  int strheight = 8;
+
+  // Enter game loop
+  while (1) {
+    userChar = 0;
+
+    // Reset all values
+    chickenColumns = COLS;
+    numChickens = 0;
+    chickenDirection = -1;
+    struct Object *hitChicken;
+
+    lives = NUM_LIVES;
+    points = 0;
+    velocity_x = 1;
+    velocity_y = 1;
+
+    // Draw game UI
+    drawStars();
+    initChickens();
+    for (int i = 0; i < COLS; i++) {
+      initChickenBullet(i);
+    }
+    initShip();
+    initBullet();
+    drawScoreboard(points, lives);
+
+    // Wait for keypress
+    zoom = 2;
+    strwidth = 25 * 8 * zoom;
+    drawString((WIDTH / 2) - (strwidth / 2),
+               (HEIGHT / 2) + 30,
+               "Press any key to start...",
+               0x0b, zoom);
+
+    while (!getUart())
+      ;
+    clearGameMessages();
+
+    // Start shooting!
+    while (lives > 0 && chickenColumns > 0) {
+      if ((userChar = getUart())) {
+        // Read char and move ship if necessary
+        parseShipMovement(userChar);
+      }
+
+      // Did the ship hit any of the chickens?
+      hitChicken = shipHitChicken(&bullet, velocity_x, velocity_y);
+      if (hitChicken) {
+        if (hitChicken->type == OBJ_CHICKEN) {
+          removeObject(hitChicken);
+          chickenColumns--;
+          points += 10;
+          drawScoreboard(points, lives);
+        }
+      }
+
+      // Check each chicken to see if it has hit the ship
+      for (int i = 0; i < COLS; i++) {
+        if (chickenHitShip(&chickenBullets[i], velocity_x, velocity_y)) {
+          // Ship is hit...
+          lives--;
+
+          // Ceasefire!
+          for (int i = 0; i < COLS; i++) {
+            removeObject(&chickenBullets[i]);
+            if (chickens[i].alive) {
+              initChickenBullet(i);
+            }
+          }
+
+          // Re-initialize ship
+          removeObject(&bullet);
+          removeObject(&ship);
+          wait_msec(500);  // Delay...
+          initShip();
+          initBullet();
+
+          // Update scores
+          drawScoreboard(points, lives);
+        } else {
+          // Chickens keep shooting down
+          moveObject(&chickenBullets[i], 0, velocity_y * 2);
+
+          // Chicken bullet is out of screen, draw a new one
+          if (chickenBullets[i].y + chickenBullets[i].height >= HEIGHT - MARGIN) {
+            removeObject(&chickenBullets[i]);
+            if (chickens[i].alive) {
+              initChickenBullet(i);
+            }
+          }
+        }
+      }
+
+      // Ship keeps shooting up
+      moveObject(&bullet, 0, -velocity_y * 3);
+
+      // Ship bullet is out of screen, draw a new one
+      if (bullet.y <= (MARGIN + 70)) {
+        removeObject(&bullet);
+        initBullet();
+      }
+
+      // Change direction if chickens are moving out of bound
+      if (chickens[0].x < (MARGIN) ||
+          chickens[COLS - 1].x > (WIDTH - MARGIN - 60)) {
+        chickenDirection *= -1;
+      }
+
+      // Move chickens left and right
+      for (int i = 0; i < COLS; i++) {
+        moveObject(&chickens[i], chickenDirection * velocity_x, 0);
+        wait_msec(1800);  // Delay...
+      }
+
+      wait_msec(2200);  // Delay...
+    }
+
+    // Clear screen
+    for (int i = 0; i < COLS; i++) {
+      removeObject(&chickens[i]);
+      removeObject(&chickenBullets[i]);
+    }
+    removeObject(&bullet);
+    removeObject(&ship);
+
+    // Display endgame messages
+    wait_msec(500);  // Delay...
+    if (chickenColumns == 0) {
+      zoom = WIDTH / 192;
+      strwidth = 8 * 8 * zoom;
+      strheight = 8 * zoom;
+      drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You won!", 0x02, zoom);
+    } else {
+      zoom = WIDTH / 192;
+      strwidth = 9 * 8 * zoom;
+      strheight = 8 * zoom;
+      drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You lost!", 0x04, zoom);
+    }
+
+    // Display replay message
+    zoom = 2;
+    strwidth = 22 * 8 * zoom;
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press <R> to replay...", 0x0b, zoom);
+
+    // Game has ended, wait for keypress
+    while (1) {
+      if ((userChar = getUart())) {
+        if (userChar == 'r' || userChar == 'R')
+          break;
+      }
+    };
+    clearGameMessages();
+  }
+}
 
 // Delete an entity and mark dead
-void removeObject(struct Object *object) {
+void removeObject(Object *object) {
   drawRect(object->x, object->y, object->x + object->width, object->y + object->height, 0, 1);
   object->alive = 0;
 }
 
 // Move an entity on the screen
-void moveObject(struct Object *object, int xoff, int yoff) {
+void moveObject(Object *object, int xoff, int yoff) {
   moveRect(object->x, object->y, object->width, object->height, xoff, yoff, 0x00);
   object->x = object->x + xoff;
   object->y = object->y + yoff;
 }
 
 // Scan if the bullet has hit any of the chickens
-struct Object *shipHitChicken(struct Object *with, int xoff, int yoff) {
+Object *shipHitChicken(Object *with, int xoff, int yoff) {
   for (int i = 0; i < numChickens; i++) {
     if (&chickens[i] != with && chickens[i].alive == 1) {
       if (with->x + xoff > chickens[i].x + chickens[i].width || chickens[i].x > with->x + xoff + with->width) {
@@ -69,7 +243,7 @@ struct Object *shipHitChicken(struct Object *with, int xoff, int yoff) {
 }
 
 // Scan if one chicken bullet has hit the ship
-int chickenHitShip(struct Object *with, int xoff, int yoff) {
+int chickenHitShip(Object *with, int xoff, int yoff) {
   if (&ship != with && ship.alive == 1 && with->alive) {
     if (with->x + xoff > ship.x + ship.width || ship.x > with->x + xoff + with->width) {
       // with (Object) is too far left or right to collide
@@ -310,173 +484,4 @@ void team_banner() {
   drawString(40, 40, "Nguyen Minh Trang - s3751450", 0xf9, 2);  // indigo text white bg
   drawString(40, 60, "Tran Kim Long - s3755614", 0xfc, 2);      // red text white bg
   drawString(40, 80, "Truong Cong Anh - s3750788", 0xf2, 2);    // green text white bg
-}
-
-void main() {
-  uart_init();     // set up serial console
-  framebf_init();  // set up frame buffer
-
-  unsigned char userChar;  // user input
-
-  // Game variables
-  int lives;
-  int points;
-  int velocity_x;
-  int velocity_y;
-  int chickenDirection;
-
-  // UI variables to display endgame messages
-  int zoom = 1;
-  int strwidth = 0;
-  int strheight = 8;
-
-  // Enter game loop
-  while (1) {
-    userChar = 0;
-
-    // Reset all values
-    chickenColumns = COLS;
-    numChickens = 0;
-    chickenDirection = -1;
-    struct Object *hitChicken;
-
-    lives = NUM_LIVES;
-    points = 0;
-    velocity_x = 1;
-    velocity_y = 1;
-
-    // Draw game UI
-    drawStars();
-    initChickens();
-    for (int i = 0; i < COLS; i++) {
-      initChickenBullet(i);
-    }
-    initShip();
-    initBullet();
-    drawScoreboard(points, lives);
-
-    // Wait for keypress
-    zoom = 2;
-    strwidth = 25 * 8 * zoom;
-    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press any key to start...", 0x0b, zoom);
-
-    while (!getUart())
-      ;
-    clearGameMessages();
-
-    // Start shooting!
-    while (lives > 0 && chickenColumns > 0) {
-      if ((userChar = getUart())) {
-        // Read char and move ship if necessary
-        parseShipMovement(userChar);
-      }
-
-      // Did the ship hit any of the chickens?
-      hitChicken = shipHitChicken(&bullet, velocity_x, velocity_y);
-      if (hitChicken) {
-        if (hitChicken->type == OBJ_CHICKEN) {
-          removeObject(hitChicken);
-          chickenColumns--;
-          points += 10;
-          drawScoreboard(points, lives);
-        }
-      }
-
-      // Check each chicken to see if it has hit the ship
-      for (int i = 0; i < COLS; i++) {
-        if (chickenHitShip(&chickenBullets[i], velocity_x, velocity_y)) {
-          // Ship is hit...
-          lives--;
-
-          // Ceasefire!
-          for (int i = 0; i < COLS; i++) {
-            removeObject(&chickenBullets[i]);
-            if (chickens[i].alive) {
-              initChickenBullet(i);
-            }
-          }
-
-          // Re-initialize ship
-          removeObject(&bullet);
-          removeObject(&ship);
-          wait_msec(500);  // Delay...
-          initShip();
-          initBullet();
-
-          // Update scores
-          drawScoreboard(points, lives);
-        } else {
-          // Chickens keep shooting down
-          moveObject(&chickenBullets[i], 0, velocity_y * 2);
-
-          // Chicken bullet is out of screen, draw a new one
-          if (chickenBullets[i].y + chickenBullets[i].height >= HEIGHT - MARGIN) {
-            removeObject(&chickenBullets[i]);
-            if (chickens[i].alive) {
-              initChickenBullet(i);
-            }
-          }
-        }
-      }
-
-      // Ship keeps shooting up
-      moveObject(&bullet, 0, -velocity_y * 3);
-
-      // Ship bullet is out of screen, draw a new one
-      if (bullet.y <= (MARGIN + 70)) {
-        removeObject(&bullet);
-        initBullet();
-      }
-
-      // Change direction if chickens are moving out of bound
-      if (chickens[0].x < (MARGIN) ||
-          chickens[COLS - 1].x > (WIDTH - MARGIN - 60)) {
-        chickenDirection *= -1;
-      }
-
-      // Move chickens left and right
-      for (int i = 0; i < COLS; i++) {
-        moveObject(&chickens[i], chickenDirection * velocity_x, 0);
-        wait_msec(1800);  // Delay...
-      }
-
-      wait_msec(2200);  // Delay...
-    }
-
-    // Clear screen
-    for (int i = 0; i < COLS; i++) {
-      removeObject(&chickens[i]);
-      removeObject(&chickenBullets[i]);
-    }
-    removeObject(&bullet);
-    removeObject(&ship);
-
-    // Display endgame messages
-    wait_msec(500);  // Delay...
-    if (chickenColumns == 0) {
-      zoom = WIDTH / 192;
-      strwidth = 8 * 8 * zoom;
-      strheight = 8 * zoom;
-      drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You won!", 0x02, zoom);
-    } else {
-      zoom = WIDTH / 192;
-      strwidth = 9 * 8 * zoom;
-      strheight = 8 * zoom;
-      drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You lost!", 0x04, zoom);
-    }
-
-    // Display replay message
-    zoom = 2;
-    strwidth = 22 * 8 * zoom;
-    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 30, "Press <R> to replay...", 0x0b, zoom);
-
-    // Game has ended, wait for keypress
-    while (1) {
-      if ((userChar = getUart())) {
-        if (userChar == 'r' || userChar == 'R')
-          break;
-      }
-    };
-    clearGameMessages();
-  }
 }
