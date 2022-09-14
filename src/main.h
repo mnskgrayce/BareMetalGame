@@ -14,3 +14,8 @@ void drawStars();
 void clearGameMessages();
 void parseShipMovement(char c);
 void team_banner();
+
+void gameMenu();
+void resetGame();
+void levelOne();
+void levelTwo();
