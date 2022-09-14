@@ -3,8 +3,6 @@
 
 #include "framebf.h"
 #include "mbox.h"
-#include "oslib.h"
-#include "printf.h"
 #include "uart.h"
 
 #define COLS 6
