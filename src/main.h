@@ -9,6 +9,8 @@ void initShip();
 void initBullet();
 void initChickens();
 void initChickenBullet(int i);
+void initBigChicken();
+void initBigChickenBullets();
 void drawScoreboard(int score, int lives);
 void drawStars();
 void clearGameMessages();

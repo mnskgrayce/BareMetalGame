@@ -30,26 +30,33 @@ enum {
   GAME_LEVEL_TWO = 2
 };
 
-int state = GAME_LEVEL_ONE;
+int state = GAME_LEVEL_TWO;
 
 // Caveat: must be an even number
 // If using an odd number,
 // the middle chicken and the ship will be lined up,
 // then if the ship is hit by the middle bullet, UI freezes (?)
 unsigned int chickenColumns = COLS;
+unsigned int bigChickenLives = COLS;
 unsigned int numChickens = 0;
+int chickenDirection;
 
 int lives;
 int points;
 int velocity_x;
 int velocity_y;
-int chickenDirection;
 
-Object chickens[COLS] = {};
-Object chickenBullets[COLS] = {};
 Object ship = {};
 Object bullet = {};
+
+// Level One enemies
+Object chickens[COLS] = {};
+Object chickenBullets[COLS] = {};
 Object* hitChicken;
+
+// Level Two enemy
+Object bigChicken = {};
+Object bigChickenBullets[3] = {};
 
 // UI variables to display endgame messages
 int zoom = 1;
@@ -90,6 +97,7 @@ void resetGame() {
 
   // Reset all values
   chickenColumns = COLS;
+  bigChickenLives = COLS;
   numChickens = 0;
   chickenDirection = -1;
   hitChicken = 0;
@@ -263,6 +271,12 @@ void levelTwo() {
   // Reset all values and UI
   resetGame();
 
+  // Initialize game entities
+  initBigChicken();
+  initBigChickenBullets();
+  initShip();
+  initBullet();
+
   waitForKeyPress();
 }
 
@@ -389,8 +403,8 @@ void initChickens() {
       0x33,
       0xee};
 
-  int yChicken = MARGIN + baseHeight;
   int xChicken = MARGIN + (VIRTWIDTH / COLS / 2) - (baseWidth / 2);
+  int yChicken = MARGIN + baseHeight;
 
   for (int i = 0; i < COLS; i++) {
     // Draw head
@@ -467,8 +481,98 @@ void initChickenBullet(int i) {
   chickenBullets[i].width = bulletRadius * 2;
   chickenBullets[i].height = bulletRadius * 2;
   chickenBullets[i].alive = 1;
+}
 
-  numChickens++;
+// Initialize big chicken
+void initBigChicken() {
+  int baseWidth = 200;
+  int baseHeight = 100;
+  int headWidth = 75;
+  int headHeight = 50;
+
+  int xChicken = (WIDTH / 2) - (baseWidth / 2);
+  int yChicken = MARGIN + (baseHeight / 2);
+
+  // Draw head
+  drawRect(xChicken + 30,
+           yChicken,
+           xChicken + 30 + headWidth,
+           yChicken + headHeight,
+           0x11,
+           1);
+
+  // Draw comb
+  drawRect(xChicken + 30, yChicken, xChicken + 30 + headWidth / 2, yChicken + 15, 0xcc, 1);
+  drawRect(xChicken + 30, yChicken - 10, xChicken + 35, yChicken + 15, 0xcc, 1);
+  drawRect(xChicken + 40, yChicken - 10, xChicken + 45, yChicken + 15, 0xcc, 1);
+  drawRect(xChicken + 50, yChicken - 10, xChicken + 55, yChicken + 15, 0xcc, 1);
+
+  // Draw base
+  drawRect(xChicken,
+           yChicken + headHeight,
+           xChicken + baseWidth,
+           yChicken + headHeight + baseHeight,
+           0x11,
+           1);
+
+  drawRect(xChicken + baseWidth - 20,
+           yChicken + headHeight + 10,
+           xChicken + baseWidth,
+           yChicken + headHeight + 20,
+           0x00,
+           1);
+
+  // Draw corner (left)
+  drawRect(xChicken,
+           yChicken + headHeight + baseHeight - 15,
+           xChicken + 15,
+           yChicken + headHeight + baseHeight,
+           0x00,
+           1);
+
+  // Draw corner (right)
+  drawRect(xChicken + baseWidth - 15,
+           yChicken + headHeight + baseHeight - 15,
+           xChicken + baseWidth,
+           yChicken + headHeight + baseHeight,
+           0x00,
+           1);
+
+  // Draw eye
+  drawRect(xChicken + 50, yChicken + headHeight - 20, xChicken + 60, yChicken + headHeight - 10, 0x00, 1);
+
+  // Draw beak
+  drawRect(xChicken + 10, yChicken + headHeight - 20, xChicken + 35, yChicken + headHeight - 10, 0x66, 1);
+
+  // Set big chicken object
+  bigChicken.type = OBJ_CHICKEN;
+  bigChicken.x = xChicken;
+  bigChicken.y = yChicken;
+  bigChicken.width = baseWidth;
+  bigChicken.height = baseHeight + headHeight + 10;
+  bigChicken.alive = 1;
+}
+
+// Draw many bullets for big chicken
+void initBigChickenBullets() {
+  int bulletRadius = 7;
+  int xBullet = bigChicken.x + (bigChicken.width / 2) - 60;
+  int yBullet = bigChicken.y + bigChicken.height + (bulletRadius * 2);
+
+  for (int i = 0; i < 3; i++) {
+    drawCircle(xBullet, yBullet, bulletRadius, 0xc0, 1);
+
+    // Add to bullet array
+    bigChickenBullets[i].type = OBJ_BULLET;
+    bigChickenBullets[i].x = xBullet;
+    bigChickenBullets[i].y = yBullet;
+    bigChickenBullets[i].width = bulletRadius * 2;
+    bigChickenBullets[i].height = bulletRadius * 2;
+    bigChickenBullets[i].alive = 1;
+
+    // Set cursor to next bullet
+    xBullet += 60;
+  }
 }
 
 // Draw the scoreboard
