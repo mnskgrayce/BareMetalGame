@@ -3,6 +3,7 @@
 
 #include "framebf.h"
 #include "mbox.h"
+#include "menu.h"
 #include "uart.h"
 
 #define CHICKEN_COLS 6
@@ -29,10 +30,11 @@ enum {
 enum {
   GAME_MENU = 0,
   GAME_LEVEL_ONE = 1,
-  GAME_LEVEL_TWO = 2
+  GAME_LEVEL_TWO = 2,
+  GAME_TUTORIAL = 3
 };
 
-int state = GAME_LEVEL_TWO;
+int state = GAME_MENU;
 
 // Caveat: must be an even number
 // If using an odd number,
@@ -86,13 +88,59 @@ void main() {
         levelTwo();
         break;
 
+      case GAME_TUTORIAL:
+        gameTutorial();
+        break;
+
       default:
         break;
     }
   }
 }
 
-void gameMenu() {}
+void gameMenu() {
+  clearScreen(WIDTH, HEIGHT);
+
+  logo_init();  // set up logo
+  menu_init();  // set up menu
+  team_banner();
+
+  int choice = GAME_LEVEL_ONE;
+
+  while (state == GAME_MENU) {
+    if ((userChar = getUart())) {
+      if (userChar == 'w' || userChar == 'W') {
+        drawString((WIDTH / 2) - 93, 350, "NEW GAME", 0x0b, 3);      // display <NEW GAME> with different color (blue)
+        drawString((WIDTH / 2) - 127, 400, "HOW TO PLAY", 0x0f, 3);  // display <HOW TO PLAY> with white color
+        choice = GAME_LEVEL_ONE;
+      } else if (userChar == 's' || userChar == 'S') {
+        drawString((WIDTH / 2) - 93, 350, "NEW GAME", 0x0f, 3);      // display <NEW GAME> with different color (blue)
+        drawString((WIDTH / 2) - 127, 400, "HOW TO PLAY", 0x0b, 3);  // display <HOW TO PLAY> with white color
+        choice = GAME_TUTORIAL;
+      } else if (userChar == '\n') {
+        // User press enter, confirm current choice and change state
+        state = choice;
+        break;
+      }
+    }
+  }
+}
+
+void gameTutorial() {
+  clearScreen(WIDTH, HEIGHT);
+
+  howtoplay_details();
+
+  while (state == GAME_TUTORIAL) {
+    if ((userChar = getUart())) {
+      // There is only one way to go, which is back to menu
+      if (userChar == 'm' || userChar == 'M') {
+        state = GAME_MENU;
+        break;
+      }
+    }
+  }
+}
 
 void resetGame() {
   userChar = 0;
@@ -121,6 +169,7 @@ void resetGame() {
 
 void levelOne() {
   // Reset all values and UI
+  clearScreen(WIDTH, HEIGHT);
   resetGame();
 
   // Initialize game entities
@@ -272,6 +321,7 @@ void levelOne() {
 
 void levelTwo() {
   // Reset all values and UI
+  clearScreen(WIDTH, HEIGHT);
   resetGame();
 
   // Initialize game entities
@@ -342,7 +392,7 @@ void levelTwo() {
           initBigChickenBullets();
         }
       }
-      wait_msec(500);
+      wait_msec(1000);  // Delay...
     }
 
     // Ship keeps shooting up
@@ -362,7 +412,7 @@ void levelTwo() {
 
     // Move big chicken left and right
     moveObject(&bigChicken, chickenDirection * velocity_x, 0);
-    wait_msec(3000);  // Delay...
+    wait_msec(2500);  // Delay...
   }
 
   // Clear screen
@@ -814,13 +864,4 @@ void waitForKeyPress() {
   while (!getUart())
     ;
   clearGameMessages();
-}
-
-// Draw the team banner
-void team_banner() {
-  drawRect(25, 25, 525, 125, 0xb0, 1);                          // cyan fill black border
-  drawRect(20, 20, 520, 120, 0xf0, 1);                          // white fill black border
-  drawString(40, 40, "Nguyen Minh Trang - s3751450", 0xf9, 2);  // indigo text white bg
-  drawString(40, 60, "Tran Kim Long - s3755614", 0xfc, 2);      // red text white bg
-  drawString(40, 80, "Truong Cong Anh - s3750788", 0xf2, 2);    // green text white bg
 }

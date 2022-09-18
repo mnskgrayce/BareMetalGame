@@ -3,6 +3,7 @@ typedef struct Object Object;
 
 // Game functions
 void gameMenu();
+void gameTutorial();
 void resetGame();
 void levelOne();
 void levelTwo();
@@ -33,6 +34,3 @@ void clearGameMessages();
 // Utilities
 void parseShipMovement(char c);
 void waitForKeyPress();
-
-// Other
-void team_banner();

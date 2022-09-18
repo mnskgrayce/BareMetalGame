@@ -235,3 +235,8 @@ void moveRect(int oldx, int oldy, int width, int height, int shiftx, int shifty,
     }
   }
 }
+
+// Clear the screen
+void clearScreen(int width, int height) {
+  drawRect(0, 0, width, height, 0x00, 1);
+}

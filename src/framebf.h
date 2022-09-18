@@ -14,3 +14,5 @@ void drawCircle(int x0, int y0, int radius, unsigned char attr, int fill);
 void drawLine(int x1, int y1, int x2, int y2, unsigned char attr);
 
 void moveRect(int oldx, int oldy, int width, int height, int shiftx, int shifty, unsigned char attr);
+
+void clearScreen(int width, int height);
