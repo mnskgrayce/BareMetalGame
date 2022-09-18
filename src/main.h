@@ -26,6 +26,7 @@ void initBigChickenBullets();
 
 // UI functions
 void drawScoreboard(int score, int lives);
+void drawBigChickenHealth(int health);
 void drawStars();
 void clearGameMessages();
 

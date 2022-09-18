@@ -5,7 +5,9 @@
 #include "mbox.h"
 #include "uart.h"
 
-#define COLS 6
+#define CHICKEN_COLS 6
+#define BIG_CHICKEN_HEALTH 8
+#define BIG_CHICKEN_BULLETS 3
 #define NUM_LIVES 3
 
 struct Object {
@@ -30,18 +32,18 @@ enum {
   GAME_LEVEL_TWO = 2
 };
 
-int state = GAME_LEVEL_ONE;
+int state = GAME_LEVEL_TWO;
 
 // Caveat: must be an even number
 // If using an odd number,
 // the middle chicken and the ship will be lined up,
 // then if the ship is hit by the middle bullet, UI freezes (?)
-unsigned int chickenColumns = COLS;
-unsigned int bigChickenHealth = COLS;
+unsigned int chickenColumns = CHICKEN_COLS;
+unsigned int bigChickenHealth = BIG_CHICKEN_HEALTH;
 unsigned int numChickens = 0;
 int chickenDirection = -1;
 
-int lives = 3;
+int lives = NUM_LIVES;
 int points = 0;
 int velocity_x = 1;
 int velocity_y = 1;
@@ -50,13 +52,13 @@ Object ship = {};
 Object bullet = {};
 
 // Level One enemies
-Object chickens[COLS] = {};
-Object chickenBullets[COLS] = {};
+Object chickens[CHICKEN_COLS] = {};
+Object chickenBullets[CHICKEN_COLS] = {};
 Object* hitChicken;
 
 // Level Two enemy
 Object bigChicken = {};
-Object bigChickenBullets[3] = {};
+Object bigChickenBullets[BIG_CHICKEN_BULLETS] = {};
 
 // UI variables to display endgame messages
 int zoom = 1;
@@ -96,8 +98,9 @@ void resetGame() {
   userChar = 0;
 
   // Reset all values
-  chickenColumns = COLS;
-  bigChickenHealth = COLS;
+  chickenColumns = CHICKEN_COLS;
+  bigChickenHealth = BIG_CHICKEN_HEALTH;
+  numChickens = 0;
   chickenDirection = -1;
 
   hitChicken = 0;
@@ -122,7 +125,7 @@ void levelOne() {
 
   // Initialize game entities
   initChickens();
-  for (int i = 0; i < COLS; i++) {
+  for (int i = 0; i < CHICKEN_COLS; i++) {
     initChickenBullet(i);
   }
   initShip();
@@ -143,19 +146,19 @@ void levelOne() {
       if (hitChicken->type == OBJ_CHICKEN) {
         removeObject(hitChicken);
         chickenColumns--;
-        points += 10;
+        points += 5;
         drawScoreboard(points, lives);
       }
     }
 
     // Check each chicken to see if it has hit the ship
-    for (int i = 0; i < COLS; i++) {
+    for (int i = 0; i < CHICKEN_COLS; i++) {
       if (chickenHitShip(&chickenBullets[i], velocity_x, velocity_y)) {
         // Ship is hit...
         lives--;
 
         // Ceasefire!
-        for (int i = 0; i < COLS; i++) {
+        for (int i = 0; i < CHICKEN_COLS; i++) {
           removeObject(&chickenBullets[i]);
           if (chickens[i].alive) {
             initChickenBullet(i);
@@ -196,12 +199,12 @@ void levelOne() {
 
     // Change direction if chickens are moving out of bound
     if (chickens[0].x < (MARGIN) ||
-        chickens[COLS - 1].x > (WIDTH - MARGIN - 60)) {
+        chickens[CHICKEN_COLS - 1].x > (WIDTH - MARGIN - 60)) {
       chickenDirection *= -1;
     }
 
     // Move chickens left and right
-    for (int i = 0; i < COLS; i++) {
+    for (int i = 0; i < CHICKEN_COLS; i++) {
       moveObject(&chickens[i], chickenDirection * velocity_x, 0);
       wait_msec(1800);  // Delay...
     }
@@ -210,7 +213,7 @@ void levelOne() {
   }
 
   // Clear screen
-  for (int i = 0; i < COLS; i++) {
+  for (int i = 0; i < CHICKEN_COLS; i++) {
     removeObject(&chickens[i]);
     removeObject(&chickenBullets[i]);
   }
@@ -277,6 +280,10 @@ void levelTwo() {
   initShip();
   initBullet();
 
+  // Draw initial chicken health
+  drawBigChickenHealth(BIG_CHICKEN_HEALTH);
+
+  // Wait for user input to start...
   waitForKeyPress();
 
   // Play until ship or big chicken runs out of lives
@@ -290,11 +297,53 @@ void levelTwo() {
     if (shipHitBigChicken(&bullet, velocity_x, velocity_y)) {
       // Take that!
       bigChickenHealth--;
-      points += 10;
+      points += 5;
+
+      removeObject(&bullet);
+      initBullet();
+      drawBigChickenHealth(bigChickenHealth);
       drawScoreboard(points, lives);
     }
 
     // Check each big chicken bullet to see if it has hit the ship
+    for (int i = 0; i < BIG_CHICKEN_BULLETS; i++) {
+      if (chickenHitShip(&bigChickenBullets[i], velocity_x, velocity_y)) {
+        // Ship is hit...
+        lives--;
+
+        // Ceasefire!
+        for (int i = 0; i < BIG_CHICKEN_BULLETS; i++) {
+          removeObject(&bigChickenBullets[i]);
+        }
+        initBigChickenBullets();
+
+        // Re-initialize ship
+        removeObject(&bullet);
+        removeObject(&ship);
+        wait_msec(500);  // Delay...
+        initShip();
+        initBullet();
+
+        // Update scores
+        drawScoreboard(points, lives);
+      } else {
+        // Big chicken keeps shooting down
+        moveObject(&bigChickenBullets[i], 0, velocity_y);
+
+        // Chicken bullet is out of screen, draw a new one
+        if (bigChickenBullets[i].x + bigChickenBullets[i].width >= (WIDTH - MARGIN - 20)) {
+          removeObject(&bigChickenBullets[i]);
+        }
+
+        if (bigChickenBullets[i].y + bigChickenBullets[i].height >= (HEIGHT - MARGIN)) {
+          for (int i = 0; i < BIG_CHICKEN_BULLETS; i++) {
+            removeObject(&bigChickenBullets[i]);
+          }
+          initBigChickenBullets();
+        }
+      }
+      wait_msec(500);
+    }
 
     // Ship keeps shooting up
     moveObject(&bullet, 0, -velocity_y);
@@ -305,11 +354,22 @@ void levelTwo() {
       initBullet();
     }
 
-    wait_msec(4000);  // Delay...
+    // Change direction if chickens are moving out of bound
+    if (bigChicken.x < (MARGIN + 150) ||
+        bigChicken.x > (WIDTH - MARGIN - 300)) {
+      chickenDirection *= -1;
+    }
+
+    // Move big chicken left and right
+    moveObject(&bigChicken, chickenDirection * velocity_x, 0);
+    wait_msec(3000);  // Delay...
   }
 
   // Clear screen
   removeObject(&bigChicken);
+  for (int i = 0; i < BIG_CHICKEN_BULLETS; i++) {
+    removeObject(&bigChickenBullets[i]);
+  }
   removeObject(&bullet);
   removeObject(&ship);
 
@@ -386,10 +446,8 @@ int shipHitBigChicken(Object* with, int xoff, int yoff) {
   if (bigChicken.alive == 1) {
     if (with->x + xoff > bigChicken.x + bigChicken.width || bigChicken.x > with->x + xoff + with->width) {
       // with (Object) is too far left or right to collide
-      return 0;
     } else if (with->y + yoff > bigChicken.y + bigChicken.height || bigChicken.y > with->y + yoff + with->height) {
       // with (Object) is too far up or down to collide
-      return 0;
     } else {
       // Collision!
       return 1;
@@ -403,10 +461,8 @@ int chickenHitShip(Object* with, int xoff, int yoff) {
   if (&ship != with && ship.alive == 1 && with->alive) {
     if (with->x + xoff > ship.x + ship.width || ship.x > with->x + xoff + with->width) {
       // with (Object) is too far left or right to collide
-      return 0;
     } else if (with->y + yoff > ship.y + ship.height || ship.y > with->y + yoff + with->height) {
       // with (Object) is too far up or down to collide
-      return 0;
     } else {
       // Collision!
       return 1;
@@ -474,7 +530,7 @@ void initChickens() {
   int headWidth = 25;
   int headHeight = 17;
 
-  static int chickenColors[COLS] = {
+  static int chickenColors[CHICKEN_COLS] = {
       0xff,
       0xaa,
       0x77,
@@ -482,10 +538,10 @@ void initChickens() {
       0x33,
       0xee};
 
-  int xChicken = MARGIN + (VIRTWIDTH / COLS / 2) - (baseWidth / 2);
+  int xChicken = MARGIN + (VIRTWIDTH / CHICKEN_COLS / 2) - (baseWidth / 2);
   int yChicken = MARGIN + baseHeight;
 
-  for (int i = 0; i < COLS; i++) {
+  for (int i = 0; i < CHICKEN_COLS; i++) {
     // Draw head
     drawRect(xChicken + 10,
              yChicken,
@@ -544,7 +600,7 @@ void initChickens() {
     numChickens++;
 
     // Set cursor to next chicken
-    xChicken += (VIRTWIDTH / COLS);
+    xChicken += (VIRTWIDTH / CHICKEN_COLS);
   }
 }
 
@@ -564,10 +620,10 @@ void initChickenBullet(int i) {
 
 // Initialize big chicken
 void initBigChicken() {
-  int baseWidth = 200;
-  int baseHeight = 100;
-  int headWidth = 75;
-  int headHeight = 50;
+  int baseWidth = 140;
+  int baseHeight = 80;
+  int headWidth = 50;
+  int headHeight = 35;
 
   int xChicken = (WIDTH / 2) - (baseWidth / 2);
   int yChicken = MARGIN + (baseHeight / 2);
@@ -581,10 +637,10 @@ void initBigChicken() {
            1);
 
   // Draw comb
-  drawRect(xChicken + 30, yChicken, xChicken + 30 + headWidth / 2, yChicken + 15, 0xcc, 1);
-  drawRect(xChicken + 30, yChicken - 10, xChicken + 35, yChicken + 15, 0xcc, 1);
-  drawRect(xChicken + 40, yChicken - 10, xChicken + 45, yChicken + 15, 0xcc, 1);
-  drawRect(xChicken + 50, yChicken - 10, xChicken + 55, yChicken + 15, 0xcc, 1);
+  drawRect(xChicken + 30, yChicken, xChicken + 30 + headWidth / 2, yChicken + 10, 0xcc, 1);
+  drawRect(xChicken + 30, yChicken - 10, xChicken + 35, yChicken + 10, 0xcc, 1);
+  drawRect(xChicken + 40, yChicken - 10, xChicken + 45, yChicken + 10, 0xcc, 1);
+  drawRect(xChicken + 50, yChicken - 10, xChicken + 55, yChicken + 10, 0xcc, 1);
 
   // Draw base
   drawRect(xChicken,
@@ -594,7 +650,7 @@ void initBigChicken() {
            0x11,
            1);
 
-  drawRect(xChicken + baseWidth - 20,
+  drawRect(xChicken + baseWidth - 10,
            yChicken + headHeight + 10,
            xChicken + baseWidth,
            yChicken + headHeight + 20,
@@ -626,31 +682,32 @@ void initBigChicken() {
   // Set big chicken object
   bigChicken.type = OBJ_CHICKEN;
   bigChicken.x = xChicken;
-  bigChicken.y = yChicken;
+  bigChicken.y = yChicken - 10;
   bigChicken.width = baseWidth;
-  bigChicken.height = baseHeight + headHeight + 10;
+  bigChicken.height = baseHeight + headHeight + 20;
   bigChicken.alive = 1;
 }
 
 // Draw many bullets for big chicken
 void initBigChickenBullets() {
   int bulletRadius = 7;
-  int xBullet = bigChicken.x + (bigChicken.width / 2) - 60;
+  int bulletDistance = 110;
+  int xBullet = bigChicken.x + (bigChicken.width / 2) - (bulletDistance);
   int yBullet = bigChicken.y + bigChicken.height + (bulletRadius * 2);
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < BIG_CHICKEN_BULLETS; i++) {
     drawCircle(xBullet, yBullet, bulletRadius, 0xc0, 1);
 
     // Add to bullet array
     bigChickenBullets[i].type = OBJ_BULLET;
-    bigChickenBullets[i].x = xBullet;
-    bigChickenBullets[i].y = yBullet;
+    bigChickenBullets[i].x = xBullet - bulletRadius;
+    bigChickenBullets[i].y = yBullet - bulletRadius;
     bigChickenBullets[i].width = bulletRadius * 2;
     bigChickenBullets[i].height = bulletRadius * 2;
     bigChickenBullets[i].alive = 1;
 
     // Set cursor to next bullet
-    xBullet += 60;
+    xBullet += bulletDistance;
   }
 }
 
@@ -664,6 +721,21 @@ void drawScoreboard(int score, int lives) {
   drawChar(tens + 0x30, (WIDTH / 2) - 300 + (8 * 8 * 2), MARGIN - 10, 0x0b, 2);
   drawChar(ones + 0x30, (WIDTH / 2) - 300 + (8 * 9 * 2), MARGIN - 10, 0x0b, 2);
   drawChar((char)lives + 0x30, (WIDTH / 2) - 30 + (8 * 20 * 2), MARGIN - 10, 0x0b, 2);
+}
+
+// Draw remaining health of big chicken
+void drawBigChickenHealth(int health) {
+  int xStart = 580;
+  int yStart = bigChicken.y - 15;
+
+  // Clear old health
+  drawRect(xStart, yStart, xStart + 200, yStart + 10, 0x00, 1);
+
+  // Draw new
+  for (int i = 0; i < health; i++) {
+    drawRect(xStart, yStart, xStart + 10, yStart + 10, 0x11, 1);
+    xStart += 20;
+  }
 }
 
 // Draw decorative stars
@@ -695,7 +767,9 @@ void drawStars() {
 void clearGameMessages() {
   int xStart = MARGIN + 20;
   int xEnd = xStart + WIDTH - (MARGIN * 2) - 100;
-  drawRect(xStart, HEIGHT / 2 - 100, xEnd, HEIGHT / 2 + 100, 0x00, 1);
+  int yStart = HEIGHT / 2 - 50;
+  int yEnd = HEIGHT / 2 + 100;
+  drawRect(xStart, yStart, xEnd, yEnd, 0x00, 1);
 }
 
 // Read user input and move ship
