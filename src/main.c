@@ -30,21 +30,21 @@ enum {
   GAME_LEVEL_TWO = 2
 };
 
-int state = GAME_LEVEL_TWO;
+int state = GAME_LEVEL_ONE;
 
 // Caveat: must be an even number
 // If using an odd number,
 // the middle chicken and the ship will be lined up,
 // then if the ship is hit by the middle bullet, UI freezes (?)
 unsigned int chickenColumns = COLS;
-unsigned int bigChickenLives = COLS;
+unsigned int bigChickenHealth = COLS;
 unsigned int numChickens = 0;
-int chickenDirection;
+int chickenDirection = -1;
 
-int lives;
-int points;
-int velocity_x;
-int velocity_y;
+int lives = 3;
+int points = 0;
+int velocity_x = 1;
+int velocity_y = 1;
 
 Object ship = {};
 Object bullet = {};
@@ -97,9 +97,9 @@ void resetGame() {
 
   // Reset all values
   chickenColumns = COLS;
-  bigChickenLives = COLS;
-  numChickens = 0;
+  bigChickenHealth = COLS;
   chickenDirection = -1;
+
   hitChicken = 0;
 
   velocity_x = 1;
@@ -278,17 +278,77 @@ void levelTwo() {
   initBullet();
 
   waitForKeyPress();
-}
 
-void waitForKeyPress() {
-  // Wait for keypress
+  // Play until ship or big chicken runs out of lives
+  while (lives > 0 && bigChickenHealth > 0) {
+    if ((userChar = getUart())) {
+      // Read char and move ship if necessary
+      parseShipMovement(userChar);
+    }
+
+    // Did the ship hit the big chicken?
+    if (shipHitBigChicken(&bullet, velocity_x, velocity_y)) {
+      // Take that!
+      bigChickenHealth--;
+      points += 10;
+      drawScoreboard(points, lives);
+    }
+
+    // Check each big chicken bullet to see if it has hit the ship
+
+    // Ship keeps shooting up
+    moveObject(&bullet, 0, -velocity_y);
+
+    // Ship bullet is out of screen, draw a new one
+    if (bullet.y <= (MARGIN + 70)) {
+      removeObject(&bullet);
+      initBullet();
+    }
+
+    wait_msec(4000);  // Delay...
+  }
+
+  // Clear screen
+  removeObject(&bigChicken);
+  removeObject(&bullet);
+  removeObject(&ship);
+
+  // Display endgame messages
+  wait_msec(500);  // Delay...
+  if (bigChickenHealth == 0) {
+    zoom = WIDTH / 192;
+    strwidth = 8 * 8 * zoom;
+    strheight = 8 * zoom;
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You won!", 0x02, zoom);
+  } else {
+    zoom = WIDTH / 192;
+    strwidth = 9 * 8 * zoom;
+    strheight = 8 * zoom;
+    drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) - (strheight / 2), "You lost!", 0x04, zoom);
+  }
+
+  // Display endgame messages
   zoom = 2;
+  strwidth = 19 * 8 * zoom;
+  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 35, "Press <R> to replay", 0x0b, zoom);
   strwidth = 25 * 8 * zoom;
-  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 35, "Press any key to start...", 0x0b, zoom);
+  strheight = 8 * zoom;
+  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 35 + strheight + 5, "or <M> to go back to menu", 0x0b, zoom);
 
-  while (!getUart())
-    ;
-  clearGameMessages();
+  // Game has ended, wait for keypress
+  while (1) {
+    if ((userChar = getUart())) {
+      if (userChar == 'r' || userChar == 'R') {
+        clearGameMessages();  // clear screen
+        state = GAME_LEVEL_ONE;
+        break;
+      } else if (userChar == 'm' || userChar == 'M') {
+        clearGameMessages();  // clear screen
+        state = GAME_MENU;
+        break;
+      }
+    }
+  };
 }
 
 // Delete an entity and mark dead
@@ -321,13 +381,32 @@ Object* shipHitChicken(Object* with, int xoff, int yoff) {
   return 0;
 }
 
+// Scan if the bullet has hit the big chicken
+int shipHitBigChicken(Object* with, int xoff, int yoff) {
+  if (bigChicken.alive == 1) {
+    if (with->x + xoff > bigChicken.x + bigChicken.width || bigChicken.x > with->x + xoff + with->width) {
+      // with (Object) is too far left or right to collide
+      return 0;
+    } else if (with->y + yoff > bigChicken.y + bigChicken.height || bigChicken.y > with->y + yoff + with->height) {
+      // with (Object) is too far up or down to collide
+      return 0;
+    } else {
+      // Collision!
+      return 1;
+    }
+  }
+  return 0;
+}
+
 // Scan if one chicken bullet has hit the ship
 int chickenHitShip(Object* with, int xoff, int yoff) {
   if (&ship != with && ship.alive == 1 && with->alive) {
     if (with->x + xoff > ship.x + ship.width || ship.x > with->x + xoff + with->width) {
       // with (Object) is too far left or right to collide
+      return 0;
     } else if (with->y + yoff > ship.y + ship.height || ship.y > with->y + yoff + with->height) {
       // with (Object) is too far up or down to collide
+      return 0;
     } else {
       // Collision!
       return 1;
@@ -650,6 +729,17 @@ void parseShipMovement(char c) {
   }
 
   wait_msec(100);  // Delay...
+}
+
+void waitForKeyPress() {
+  // Wait for keypress
+  zoom = 2;
+  strwidth = 25 * 8 * zoom;
+  drawString((WIDTH / 2) - (strwidth / 2), (HEIGHT / 2) + 35, "Press any key to start...", 0x0b, zoom);
+
+  while (!getUart())
+    ;
+  clearGameMessages();
 }
 
 // Draw the team banner
